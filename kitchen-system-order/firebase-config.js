@@ -1,16 +1,14 @@
-// firebase-config.js
 const firebaseConfig = {
-    apiKey: "AIzaSyB7xF2kP5jgH6xyGg7-S-T_QgMoBDIoBBc",
-    authDomain: "kitchenordersystem-66eb2.firebaseapp.com",
-    projectId: "kitchenordersystem-66eb2",
-    storageBucket: "kitchenordersystem-66eb2.firebasestorage.app",
-    messagingSenderId: "786074432195",
-    appId: "1:786074432195:web:8381f2cba8f43002232876"
+  apiKey: "AIzaSyCkzcdpjvd9vvtjQtbT2bjLkUcB9MrAWg8",
+  authDomain: "thechedi-d5037.firebaseapp.com",
+  databaseURL: "https://thechedi-d5037-default-rtdb.firebaseio.com",
+  projectId: "thechedi-d5037",
+  storageBucket: "thechedi-d5037.firebasestorage.app",
+  messagingSenderId: "275983781614",
+  appId: "1:275983781614:web:f44829dcd38f96c4deedff",
+  measurementId: "G-Z887ZZ7M0F"
 };
 
 // Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
-console.log("✅ Firebase initialized successfully");
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
