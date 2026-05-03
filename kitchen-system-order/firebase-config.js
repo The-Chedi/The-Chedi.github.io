@@ -1,5 +1,5 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyCkzcdpjvd9vvtjQtbT2bjLkUcB9MrAWg8",
+  apiKey: "AIzaSy...",
   authDomain: "thechedi-d5037.firebaseapp.com",
   databaseURL: "https://thechedi-d5037-default-rtdb.firebaseio.com",
   projectId: "thechedi-d5037",
@@ -9,6 +9,5 @@ const firebaseConfig = {
   measurementId: "G-Z887ZZ7M0F"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
