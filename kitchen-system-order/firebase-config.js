@@ -10,3 +10,7 @@ const firebaseConfig = {
 
 
 const app = initializeApp(firebaseConfig);
+
+import { getDatabase, ref, set } from "firebase/database";
+
+const db = getDatabase(app);
