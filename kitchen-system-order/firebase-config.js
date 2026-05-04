@@ -1,13 +1,1 @@
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "thechedi-d5037.firebaseapp.com",
-  databaseURL: "https://thechedi-d5037-default-rtdb.firebaseio.com",
-  projectId: "thechedi-d5037",
-  storageBucket: "thechedi-d5037.firebasestorage.app",
-  messagingSenderId: "275983781614",
-  appId: "1:275983781614:web:f44829dcd38f96c4deedff",
-  measurementId: "G-Z887ZZ7M0F"
-};
-
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const firebaseConfig = { apiKey: "AIzaSyD57ErKNYwqGbLcriDYYvPUtVIw8jRncXQ", authDomain: "system-order-kitchen.firebaseapp.com", projectId: "system-order-kitchen", storageBucket: "system-order-kitchen.firebasestorage.app", messagingSenderId: "429224554052", appId: "1:429224554052:web:85d32727439fe55efcd611" }; // Initialize Firebase const app = initializeApp(firebaseConfig);
