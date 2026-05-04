@@ -9,8 +9,8 @@ const firebaseConfig = {
 };
 
 
-const app = initializeApp(firebaseConfig);
-
-import { getDatabase, ref, set } from "firebase/database";
-
-const db = getDatabase(app);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+console.log("✅ Firebase initialized successfully");
