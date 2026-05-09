@@ -838,9 +838,9 @@ const translations = {
         submit: "Submit",
         export: "Export",
         clear: "Clear",
-        myRequests: "My Requests",
+        myRequests: "Kitchen Orders",
         orderHistory: "Completed Orders History",
-        showsAdminPrice: "Shows admin and price totals - only approved items count",
+        showsAdminPrice: "Shows all orders from this kitchen - approved items only count toward total",
         code: "Code",
         item: "Item",
         qty: "Qty",
@@ -861,7 +861,7 @@ const translations = {
         egp: "EGP",
         allItems: "All Items",
         noItems: "No items",
-        noRequests: "No requests yet",
+        noRequests: "No orders yet",
         noHistory: "No completed orders yet (orders approved/rejected by admin will appear here)",
         enterChefNameToSee: "Enter chef name to see items",
         totalValueLabel: "Total Value",
@@ -891,9 +891,9 @@ const translations = {
         submit: "إرسال",
         export: "تصدير",
         clear: "مسح",
-        myRequests: "طلباتي",
+        myRequests: "طلبات المطبخ",
         orderHistory: "سجل الطلبات المكتملة",
-        showsAdminPrice: "يعرض القيم الإجمالية والسعر ومن قام بالموافقة",
+        showsAdminPrice: "يعرض جميع طلبات هذا المطبخ - الأصناف المعتمدة فقط تحسب في الإجمالي",
         code: "الكود",
         item: "الصنف",
         qty: "الكمية",
@@ -1167,25 +1167,20 @@ async function forceReloadItems() {
     }
 }
 
-// ============ ORDER HISTORY FUNCTION - ONLY SHOWS ADMIN COMPLETED ORDERS (approved/rejected/partial) ============
+// ============ ORDER HISTORY FUNCTION - FIXED: Filter by kitchen only ============
 function loadOrderHistory(kitchen) {
     const kitchenId = kitchen.replace(/\s/g, '_').replace(/\//g, '_');
-    const chefName = chefNames[kitchen];
     const container = document.getElementById(`orderHistoryContainer_${kitchenId}`);
     if (!container) return;
-    
-    if (!chefName) {
-        container.innerHTML = '<div class="empty-state">⚠️ Enter chef name to view order history</div>';
-        return;
-    }
     
     const fromDate = document.getElementById(`historyFrom_${kitchenId}`)?.value || "";
     const toDate = document.getElementById(`historyTo_${kitchenId}`)?.value || "";
     
-    // Filter orders for this kitchen and chef, AND only include orders that are NOT pending (approved/rejected/partial)
+    // FIXED: Filter by kitchen ONLY - NOT by chef name
+    // All devices in the same kitchen see the same history
     let historyOrders = allRequests.filter(r => {
         const orderStatus = getOverallStatus(r.items);
-        return r.section === kitchen && r.chefName === chefName && orderStatus !== "pending";
+        return r.section === kitchen && orderStatus !== "pending";
     });
     
     if (fromDate) {
@@ -1251,7 +1246,7 @@ function loadOrderHistory(kitchen) {
             
             itemsHtml += `<tr>
                 <td>${item.code}</td>
-                <td><strong>${escapeHtml(displayName)}</strong></td>
+                <td><strong>${escapeHtml(displayName)}</strong></div>
                 <td>${item.originalQty.toFixed(1)}</div>
                 <td>${item.unit}</div>
                 <td>${(item.price || 0).toFixed(2)}</div>
@@ -1503,8 +1498,8 @@ function renderCart(kitchen) {
                 const displayName = currentLang === 'ar' && item.name_ar ? item.name_ar : item.name;
                 desktopBody.innerHTML += `
                     <tr>
-                        <td>${item.code}</td>
-                        <td><strong>${escapeHtml(displayName)}</strong></td>
+                        <td>${item.code}</div>
+                        <td><strong>${escapeHtml(displayName)}</strong></div>
                         <td>${item.qty.toFixed(1)}</div>
                         <td>${item.unit}</div>
                         <td>${(item.price || 0).toFixed(2)}</div>
@@ -1574,22 +1569,23 @@ function getOverallStatus(items) {
     return "pending";
 }
 
+// ============ LOAD MY REQUESTS - FIXED: Filter by kitchen only ============
 function loadMyRequests(kitchen) {
     const kitchenId = kitchen.replace(/\s/g, '_').replace(/\//g, '_');
-    const chefName = chefNames[kitchen];
     const container = document.getElementById(`myRequestsDesktop_${kitchenId}`);
     if (!container) return;
-    if (!chefName) {
-        container.innerHTML = `<div class="empty-state">${t('enterChefNameToSee')}</div>`;
-        return;
-    }
-    const myRequests = allRequests.filter(r => r.chefName === chefName && r.section === kitchen);
-    if (!myRequests.length) {
+    
+    // FIXED: Filter by kitchen ONLY - NOT by chef name
+    // All devices in the same kitchen see all orders from this kitchen
+    const kitchenRequests = allRequests.filter(r => r.section === kitchen);
+    
+    if (!kitchenRequests.length) {
         container.innerHTML = `<div class="empty-state">📭 ${t('noRequests')}</div>`;
         return;
     }
+    
     container.innerHTML = "";
-    [...myRequests].reverse().forEach(req => {
+    [...kitchenRequests].reverse().forEach(req => {
         const status = getOverallStatus(req.items);
         let statusClass = "status-pending", statusText = t('pending');
         if (status === "approved") { statusClass = "status-approved"; statusText = t('approved'); }
@@ -1641,8 +1637,8 @@ function loadMyRequests(kitchen) {
             }
             
             itemsHtml += `<tr>
-                <td>${item.code}</td>
-                <td><div><strong>${escapeHtml(displayName)}</strong></div></td>
+                <td>${item.code}</div>
+                <td><div><strong>${escapeHtml(displayName)}</strong></div></div>
                 <td>${qty.toFixed(1)}</div>
                 <td>${item.unit}</div>
                 <td>${price.toFixed(2)}</div>
@@ -1652,7 +1648,7 @@ function loadMyRequests(kitchen) {
             </tr>`;
         });
         itemsHtml += `<tr style="background:#f8f9fa; font-weight:bold;">
-            <td colspan="7" style="text-align:right;">💰 ${t('totalValue')}:</div>
+            <td colspan="7" style="text-align:right;">💰 ${t('totalValue')} (Approved only):</div>
             <td><span class="price-total">${approvedTotalValue.toFixed(2)} ${t('egp')}</span></div>
         </tr>`;
         itemsHtml += `</tbody>}</div>`;
@@ -1734,6 +1730,8 @@ async function selectKitchen(kitchen) {
     renderCart(kitchen);
     loadMyRequests(kitchen);
     restoreHistoryState(kitchen);
+    // Save last selected kitchen
+    localStorage.setItem("lastSelectedKitchen", kitchen);
 }
 
 function onChefNameChange(kitchen) {
@@ -1811,9 +1809,18 @@ function generatePages() {
     });
 }
 
+function loadLastSelectedKitchen() {
+    const lastKitchen = localStorage.getItem("lastSelectedKitchen");
+    if (lastKitchen && unlockedKitchens[lastKitchen]) {
+        selectKitchen(lastKitchen);
+    }
+}
+
 generatePages();
 startAutoRefresh();
 loadRequestsFromFirebase();
+loadLastSelectedKitchen();
+
 db.collection("kitchen_requests").onSnapshot(() => {
     loadRequestsFromFirebase();
 });
