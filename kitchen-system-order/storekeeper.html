@@ -18,7 +18,6 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
-    -webkit-tap-highlight-color:transparent;
 }
 body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
@@ -70,23 +69,37 @@ body{
 .btn-header:hover{
     background:rgba(255,255,255,0.35);
 }
-.refresh-btn{
-    background:rgba(255,255,255,0.25);
-    border:none;
-    padding:8px 14px;
-    border-radius:50%;
-    color:white;
-    cursor:pointer;
-    font-weight:700;
-    font-size:1.1rem;
-}
-.kitchen-tabs{
+.main-tabs{
     background:white;
     padding:0 20px;
     box-shadow:0 2px 8px rgba(0,0,0,0.05);
     position:sticky;
     top:65px;
     z-index:99;
+}
+.main-tab-container{
+    max-width:1400px;
+    margin:0 auto;
+    display:flex;
+    gap:20px;
+    padding:12px 0;
+}
+.main-tab{
+    padding:10px 24px;
+    background:#f0f2f5;
+    border:none;
+    border-radius:30px;
+    font-weight:800;
+    cursor:pointer;
+}
+.main-tab.active{
+    background:linear-gradient(135deg,#1e5c3c,#2a8a50);
+    color:white;
+}
+.kitchen-tabs{
+    background:white;
+    padding:0 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
     overflow-x:auto;
     white-space:nowrap;
 }
@@ -143,15 +156,6 @@ body{
     flex:1;
     min-width:220px;
 }
-.filters button{
-    background:#3498db;
-    color:white;
-    border:none;
-    padding:10px 18px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:800;
-}
 .export-buttons{
     display:flex;
     gap:10px;
@@ -160,10 +164,15 @@ body{
 }
 .export-buttons button{
     background:#27ae60;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:800;
 }
 .archive-btn-header{
     background:#e67e22 !important;
-    margin-left:5px;
 }
 .order-group{
     margin-bottom:25px;
@@ -244,6 +253,10 @@ body{
     background:#dcfce7;
     color:#166534;
 }
+.badge-archived{
+    background:#ffeaa7;
+    color:#d35400;
+}
 .empty-state{
     text-align:center;
     padding:50px;
@@ -309,9 +322,6 @@ body{
     color:#e74c3c;
     margin-top:12px;
 }
-.close-modal{
-    background:#95a5a6 !important;
-}
 .warning-buttons{
     display:flex;
     gap:12px;
@@ -326,30 +336,19 @@ body{
 .btn-secondary{
     background:#7f8c8d !important;
 }
-.demo-badge{
-    background:#f39c12;
-    color:white;
-    padding:4px 12px;
-    border-radius:20px;
-    font-size:12px;
+.restore-btn{
+    background:#27ae60 !important;
+    font-size:12px !important;
+    padding:5px 12px !important;
     margin-left:10px;
 }
-@media(max-width:768px){
-    .filters{
-        flex-direction:column;
-        align-items:stretch;
-    }
-    .filters input, .filters button{
-        width:100%;
-    }
-    .export-buttons{
-        margin-left:0;
-        width:100%;
-    }
-    .data-table th, .data-table td{
-        font-size:11px;
-        padding:8px 6px;
-    }
+.archive-info{
+    background:#e8f5e9;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:15px;
+    font-size:13px;
+    color:#2e7d32;
 }
 </style>
 </head>
@@ -373,8 +372,9 @@ body{
 <div id="archiveWarningModal" class="modal" style="display:none;">
     <div class="modal-content">
         <h2>⚠️ WARNING: Archive Completed Orders</h2>
-        <p>This action will move <strong>ALL approved orders</strong> from the current list to the <strong>ARCHIVE</strong>.</p>
-        <p style="color:#e67e22; margin-top:10px;">🔔 The data will be removed from this dashboard and saved permanently.</p>
+        <p>This action will move <strong>ALL approved orders</strong> to the <strong>ARCHIVE</strong>.</p>
+        <p style="color:#e67e22; margin-top:10px;">📍 Archived orders will be saved in: <strong>Local Storage → "archived_orders"</strong></p>
+        <p style="color:#27ae60;">You can view them in the "📦 Archived Orders" tab above.</p>
         <div class="warning-buttons">
             <button class="btn-danger" onclick="confirmArchiveAndClean()">🗄️ Yes, Archive & Clean</button>
             <button class="btn-secondary" onclick="closeArchiveModal()">Cancel</button>
@@ -386,7 +386,7 @@ body{
 <div id="mainContent" style="display:none;">
     <div class="header">
         <div class="header-content">
-            <div class="logo">📦 <span>Storekeeper | Approved Orders</span><span class="demo-badge">DEMO MODE</span></div>
+            <div class="logo">📦 <span>Storekeeper Dashboard</span></div>
             <div class="header-buttons">
                 <button class="refresh-btn" onclick="manualRefresh()">🔄</button>
                 <button class="btn-header" onclick="window.print()">🖨️ Print</button>
@@ -394,65 +394,69 @@ body{
             </div>
         </div>
     </div>
-    <div class="kitchen-tabs">
-        <div class="tabs-container" id="tabsContainer"></div>
+
+    <!-- Main Tabs: Active Orders vs Archived -->
+    <div class="main-tabs">
+        <div class="main-tab-container">
+            <button class="main-tab active" id="tabActiveOrders" onclick="switchMainTab('active')">📋 Active Orders</button>
+            <button class="main-tab" id="tabArchivedOrders" onclick="switchMainTab('archived')">📦 Archived Orders</button>
+        </div>
     </div>
-    <div id="kitchenPagesContainer"></div>
+
+    <div id="activeOrdersPanel">
+        <div class="kitchen-tabs">
+            <div class="tabs-container" id="tabsContainer"></div>
+        </div>
+        <div id="kitchenPagesContainer"></div>
+    </div>
+
+    <div id="archivedOrdersPanel" style="display:none;">
+        <div class="container">
+            <div class="card">
+                <h3>📦 Archived Orders History</h3>
+                <div class="archive-info">
+                    📍 Archive Location: <strong>Browser Local Storage → "archived_orders"</strong><br>
+                    🔍 You can restore any order back to active status using the "Restore" button.
+                </div>
+                <div class="filters">
+                    <input type="text" id="archiveSearchInput" placeholder="Search archived orders..." oninput="renderArchivedOrders()">
+                </div>
+                <div id="archivedOrdersList"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 const STOREKEEPER_PASSWORD = "store123";
 let currentKitchen = "all";
 let allApprovedOrders = [];
+let archivedOrders = [];
+let currentMainTab = "active";
 let filterState = { search: "", dateFrom: "", dateTo: "" };
 
-// Firebase configuration - REPLACE WITH YOUR ACTUAL FIREBASE CONFIG
-// For demo, I'm including a placeholder - you must replace this with your own Firebase project config
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
-
-let db = null;
-let useLocalStorage = true; // Fallback to localStorage if Firebase fails
-
-// Initialize Firebase
-function initFirebase() {
-    try {
-        // Check if Firebase config is valid (not placeholder)
-        if (firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            db = firebase.firestore();
-            useLocalStorage = false;
-            console.log("✅ Firebase connected successfully");
-            return true;
-        } else {
-            console.log("⚠️ Using demo mode (localStorage) - Configure Firebase for production");
-            useLocalStorage = true;
-            loadDemoData();
-            return false;
-        }
-    } catch (error) {
-        console.error("Firebase init error:", error);
-        useLocalStorage = true;
-        loadDemoData();
-        return false;
+// Load archived orders from localStorage
+function loadArchivedOrders() {
+    const saved = localStorage.getItem("archived_orders");
+    if (saved) {
+        archivedOrders = JSON.parse(saved);
+    } else {
+        archivedOrders = [];
     }
 }
 
-// Demo data for testing
+// Save archived orders to localStorage
+function saveArchivedOrders() {
+    localStorage.setItem("archived_orders", JSON.stringify(archivedOrders));
+    renderArchivedOrders();
+}
+
+// Load demo active orders
 function loadDemoData() {
     const savedOrders = localStorage.getItem("demo_approved_orders");
     if (savedOrders) {
         allApprovedOrders = JSON.parse(savedOrders);
     } else {
-        // Create sample approved orders
         allApprovedOrders = [
             {
                 id: "ORD001",
@@ -488,89 +492,62 @@ function loadDemoData() {
                 ]
             }
         ];
-        localStorage.setItem("demo_approved_orders", JSON.stringify(allApprovedOrders));
+        saveActiveOrders();
     }
-    renderTabs();
-    renderCurrentKitchen();
+    loadArchivedOrders();
 }
 
-function saveDemoData() {
-    if (useLocalStorage) {
-        localStorage.setItem("demo_approved_orders", JSON.stringify(allApprovedOrders));
-    }
+function saveActiveOrders() {
+    localStorage.setItem("demo_approved_orders", JSON.stringify(allApprovedOrders));
 }
 
-// Password check - now working properly
 function checkPassword() {
-    const enteredPassword = document.getElementById("passwordInput").value;
-    if (enteredPassword === STOREKEEPER_PASSWORD) {
+    if (document.getElementById("passwordInput").value === STOREKEEPER_PASSWORD) {
         document.getElementById("passwordModal").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
-        
-        // Initialize Firebase after login
-        initFirebase();
-        
-        if (!useLocalStorage && db) {
-            startRealtimeListener();
-        }
-        
-        showToast("✅ Login successful - Welcome Storekeeper");
+        loadDemoData();
+        renderTabs();
+        renderCurrentKitchen();
+        renderArchivedOrders();
+        showToast("✅ Login successful - Archive location: Local Storage");
     } else {
         document.getElementById("passwordError").innerHTML = "❌ Wrong password! Try: store123";
     }
 }
 
-function manualRefresh() { 
-    if (!useLocalStorage && db) {
-        loadApprovedOrdersOnce();
+function switchMainTab(tab) {
+    currentMainTab = tab;
+    const activePanel = document.getElementById("activeOrdersPanel");
+    const archivedPanel = document.getElementById("archivedOrdersPanel");
+    const tabActive = document.getElementById("tabActiveOrders");
+    const tabArchived = document.getElementById("tabArchivedOrders");
+    
+    if (tab === "active") {
+        activePanel.style.display = "block";
+        archivedPanel.style.display = "none";
+        tabActive.classList.add("active");
+        tabArchived.classList.remove("active");
+        renderTabs();
+        renderCurrentKitchen();
     } else {
-        loadDemoData();
+        activePanel.style.display = "none";
+        archivedPanel.style.display = "block";
+        tabActive.classList.remove("active");
+        tabArchived.classList.add("active");
+        renderArchivedOrders();
     }
+}
+
+function manualRefresh() { 
+    loadDemoData();
+    renderCurrentKitchen();
     showToast("🔄 Refreshing..."); 
 }
 
 function formatDate(dateValue) {
     if (!dateValue) return "N/A";
-    let d;
-    if (typeof dateValue === "string") d = new Date(dateValue);
-    else if (dateValue.seconds) d = new Date(dateValue.seconds * 1000);
-    else d = new Date(dateValue);
+    let d = new Date(dateValue);
     return d.toLocaleString("en-GB", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
-}
-
-// Real-time listener for approved orders
-function startRealtimeListener() {
-    if (!db) return;
-    db.collection("kitchen_requests")
-    .where("archived", "!=", true)
-    .onSnapshot(snapshot => {
-        allApprovedOrders = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if(data.items && data.items.some(item => item.status === "approved")) {
-                allApprovedOrders.push({ id:doc.id, ...data });
-            }
-        });
-        renderTabs();
-        renderCurrentKitchen();
-    }, error => {
-        console.warn("Firestore error, using demo mode", error);
-        loadDemoData();
-    });
-}
-
-async function loadApprovedOrdersOnce() {
-    if (!db) return;
-    const snapshot = await db.collection("kitchen_requests").where("archived", "!=", true).get();
-    allApprovedOrders = [];
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if(data.items && data.items.some(item => item.status === "approved")) {
-            allApprovedOrders.push({ id:doc.id, ...data });
-        }
-    });
-    renderTabs();
-    renderCurrentKitchen();
 }
 
 function renderTabs() {
@@ -595,12 +572,15 @@ function renderCurrentKitchen() {
 function renderKitchenPage(orders) {
     const container = document.getElementById("kitchenPagesContainer");
     if (!container) return;
-    container.innerHTML = `<div class="container"><div class="card"><h3>📋 Approved Orders ${useLocalStorage ? '(Demo Mode)' : ''}</h3><div class="filters">
-        <input type="text" id="searchInput" placeholder="Search by item or request ID..." oninput="saveFiltersAndRender()">
-        <input type="date" id="dateFrom" onchange="saveFiltersAndRender()">
-        <input type="date" id="dateTo" onchange="saveFiltersAndRender()">
-        <div class="export-buttons"><button onclick="exportKitchenPDF()">📄 Export PDF</button><button onclick="exportCSV()">📊 Export CSV</button></div>
-    </div><div id="ordersList"></div></div></div>`;
+    container.innerHTML = `<div class="container"><div class="card"><h3>📋 Active Approved Orders</h3>
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="Search..." oninput="saveFiltersAndRender()">
+            <input type="date" id="dateFrom" onchange="saveFiltersAndRender()">
+            <input type="date" id="dateTo" onchange="saveFiltersAndRender()">
+            <div class="export-buttons"><button onclick="exportKitchenPDF()">📄 Export PDF</button><button onclick="exportCSV()">📊 Export CSV</button></div>
+        </div>
+        <div id="ordersList"></div>
+    </div></div>`;
     displayOrders();
 }
 
@@ -629,7 +609,7 @@ function displayOrders() {
     if (!container) return;
     let filtered = getFilteredOrders();
     if (filtered.length === 0) { 
-        container.innerHTML = '<div class="empty-state">📭 No approved orders found</div>'; 
+        container.innerHTML = '<div class="empty-state">📭 No active approved orders</div>'; 
         return; 
     }
     let html = "";
@@ -651,10 +631,66 @@ function displayOrders() {
     container.innerHTML = html;
 }
 
-// Archive functionality
+// Render Archived Orders with restore option
+function renderArchivedOrders() {
+    const container = document.getElementById("archivedOrdersList");
+    if (!container) return;
+    
+    const searchTerm = document.getElementById("archiveSearchInput")?.value.toLowerCase() || "";
+    let filtered = archivedOrders.filter(order => 
+        !searchTerm || order.requestId?.toLowerCase().includes(searchTerm) ||
+        order.section?.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">📭 No archived orders found</div>';
+        return;
+    }
+    
+    let html = `<div class="archive-info">📊 Total Archived Orders: ${filtered.length}</div>`;
+    filtered.forEach((order, idx) => {
+        const approvedItems = order.items.filter(item => item.status === "approved");
+        let total = 0;
+        html += `<div class="order-group"><div class="order-header">
+            <div><span class="order-id">📄 ${order.requestId || order.id}</span><span class="kitchen-tag">${order.section || ""}</span></div>
+            <div class="order-meta">
+                <span>👨‍🍳 ${order.chefName || ""}</span>
+                <span>📅 ${formatDate(order.submittedAt)}</span>
+                <span>🗄️ Archived: ${order.archivedAt ? formatDate(order.archivedAt) : "N/A"}</span>
+                <button class="restore-btn" onclick="restoreOrder(${idx})">↩️ Restore to Active</button>
+            </div>
+        </div>
+        <div class="table-wrapper"><table class="data-table"><thead><tr><th>Code</th><th>Item</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th></tr></thead><tbody>`;
+        approvedItems.forEach(item => {
+            const qty = item.approvedQty || item.originalQty || 0;
+            const price = item.price || 0;
+            const rowTotal = qty * price;
+            total += rowTotal;
+            html += `<tr><td>${item.code || ""}</td><td>${escapeHtml(item.name)}</td><td>${qty}</td><td>${item.unit || ""}</td><td>${price.toFixed(2)}</td><td>${rowTotal.toFixed(2)}</td></tr>`;
+        });
+        html += `</tbody></table></div><div style="padding:10px 15px;background:#fff3cd;text-align:right;"><span class="order-total">💰 Order Total: ${total.toFixed(2)} EGP</span></div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+// Restore order from archive back to active
+function restoreOrder(index) {
+    const order = archivedOrders[index];
+    if (order) {
+        allApprovedOrders.push(order);
+        archivedOrders.splice(index, 1);
+        saveActiveOrders();
+        saveArchivedOrders();
+        renderCurrentKitchen();
+        renderArchivedOrders();
+        showToast(`↩️ Restored ${order.requestId} to active orders`);
+    }
+}
+
+// Archive all active orders
 function showArchiveWarningModal() {
     if (allApprovedOrders.length === 0) {
-        showToast("⚠️ No approved orders to archive.");
+        showToast("⚠️ No active orders to archive.");
         return;
     }
     document.getElementById("archiveWarningModal").style.display = "flex";
@@ -664,28 +700,32 @@ function closeArchiveModal() {
     document.getElementById("archiveWarningModal").style.display = "none";
 }
 
-async function confirmArchiveAndClean() {
+function confirmArchiveAndClean() {
     closeArchiveModal();
     if (allApprovedOrders.length === 0) { showToast("Nothing to archive"); return; }
-    showToast("🗄️ Archiving orders & cleaning dashboard...");
     
-    // Save to archive (localStorage for demo)
-    const archivedOrders = JSON.parse(localStorage.getItem("archived_orders") || "[]");
-    archivedOrders.push(...allApprovedOrders.map(order => ({ ...order, archivedAt: new Date().toISOString() })));
-    localStorage.setItem("archived_orders", JSON.stringify(archivedOrders));
+    // Add archived timestamp and move to archivedOrders
+    const ordersToArchive = allApprovedOrders.map(order => ({
+        ...order,
+        archivedAt: new Date().toISOString()
+    }));
     
-    // Clear current orders
+    archivedOrders.push(...ordersToArchive);
     allApprovedOrders = [];
-    saveDemoData();
     
-    showToast(`✅ Archived ${allApprovedOrders.length} orders. Dashboard cleaned.`);
-    renderTabs();
+    saveActiveOrders();
+    saveArchivedOrders();
+    
+    showToast(`✅ Archived ${ordersToArchive.length} orders to Local Storage → "archived_orders"`);
     renderCurrentKitchen();
+    if (currentMainTab === "archived") {
+        renderArchivedOrders();
+    }
 }
 
-// PDF Export
+// PDF Export for active orders
 async function exportKitchenPDF() {
-    let filtered = getFilteredOrders().filter(o => o.items.some(i => i.status === "approved"));
+    let filtered = getFilteredOrders();
     if (filtered.length === 0) { showToast("No data to export"); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p","mm","a4");
@@ -693,19 +733,18 @@ async function exportKitchenPDF() {
     doc.setFontSize(18); doc.text("Kitchen Approved Orders Report", 14, y); y+=10;
     doc.setFontSize(11); doc.text(`Generated: ${new Date().toLocaleString()}`, 14, y); y+=10;
     let grandTotal=0;
-    for(let idx=0; idx<filtered.length; idx++) {
-        const order=filtered[idx];
-        const approvedItems=order.items.filter(i=>i.status==="approved");
+    for(let order of filtered) {
+        const approvedItems = order.items.filter(i=>i.status==="approved");
         if(approvedItems.length===0) continue;
         doc.setFontSize(12); doc.text(`Request: ${order.requestId || order.id}`,14,y); y+=6;
         doc.text(`Kitchen: ${order.section||""}  Chef: ${order.chefName||""}`,14,y); y+=6;
         doc.text(`Date: ${formatDate(order.submittedAt)}`,14,y); y+=4;
         const rows=[]; let orderTotal=0;
-        approvedItems.forEach(item=>{ const qty=item.approvedQty||item.originalQty||0; const price=item.price||0; const total=qty*price; orderTotal+=total; grandTotal+=total; rows.push([item.code||"",item.name||"",qty,item.unit||"",price.toFixed(2),total.toFixed(2),item.approvedBy||""]); });
-        doc.autoTable({ startY: y+2, head:[["Code","Item","Qty","Unit","Price","Total","Approved By"]], body:rows, styles:{ fontSize:8 }, headStyles:{ fillColor:[30,92,60] }, margin:{ left:14, right:14 } });
+        approvedItems.forEach(item=>{ const qty=item.approvedQty||item.originalQty||0; const price=item.price||0; const total=qty*price; orderTotal+=total; grandTotal+=total; rows.push([item.code||"",item.name||"",qty,item.unit||"",price.toFixed(2),total.toFixed(2)]); });
+        doc.autoTable({ startY: y+2, head:[["Code","Item","Qty","Unit","Price","Total"]], body:rows, styles:{ fontSize:8 }, headStyles:{ fillColor:[30,92,60] }, margin:{ left:14, right:14 } });
         y = doc.lastAutoTable.finalY+6;
         doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`,14,y); y+=12;
-        if(y>260 && idx<filtered.length-1){ doc.addPage(); y=20; }
+        if(y>260){ doc.addPage(); y=20; }
     }
     doc.setFontSize(14); doc.text(`GRAND TOTAL: ${grandTotal.toFixed(2)} EGP`,14,y);
     doc.save(`Kitchen_Report_${new Date().toISOString().slice(0,10)}.pdf`);
@@ -724,11 +763,8 @@ function downloadCSV(csvText,filename){ const blob=new Blob(["\uFEFF"+csvText],{
 function escapeHtml(str){ if(!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 function showToast(msg){ const toast=document.createElement("div"); toast.className="toast"; toast.innerText=msg; document.body.appendChild(toast); setTimeout(()=>toast.remove(),2500); }
 
-// Initialize
 window.onload = () => { 
     document.getElementById("passwordModal").style.display = "flex";
-    // Load demo data initially
-    loadDemoData();
 };
 </script>
 </body>
