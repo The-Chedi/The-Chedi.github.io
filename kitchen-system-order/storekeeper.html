@@ -13,9 +13,6 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<!-- Google Drive API -->
-<script src="https://apis.google.com/js/api.js"></script>
-
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -346,7 +343,7 @@ body{
     z-index:1000;
 }
 
-/* ENHANCED LOGIN MODAL */
+/* LOGIN MODAL */
 .modal{
     display:flex;
     position:fixed;
@@ -369,7 +366,7 @@ body{
     text-align:center;
     max-width:400px;
     width:90%;
-    box-shadow:0 25px 45px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
+    box-shadow:0 25px 45px rgba(0,0,0,0.25);
     animation: modalFadeIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }
 
@@ -392,7 +389,6 @@ body{
     background-clip:text;
     color:transparent;
     font-weight:800;
-    letter-spacing:-0.3px;
 }
 
 .modal-content p{
@@ -410,7 +406,6 @@ body{
     font-size:16px;
     text-align:center;
     transition:all 0.2s;
-    font-weight:500;
     outline:none;
     background:#f9fafb;
 }
@@ -432,13 +427,6 @@ body{
     width:100%;
     font-size:1rem;
     margin-bottom:12px;
-    transition:transform 0.15s, box-shadow 0.15s;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-.modal-content button:first-of-type:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 18px rgba(0,0,0,0.15);
 }
 
 .error-msg{
@@ -452,40 +440,18 @@ body{
 .close-modal{
     background:#f1f3f5 !important;
     color:#2c3e2c !important;
-    box-shadow:none !important;
     border:1px solid #e2e8f0 !important;
 }
 
-.close-modal:hover{
-    background:#e9ecef !important;
-    transform:translateY(-1px) !important;
-}
-
 @media(max-width:768px){
-
-    .stats-grid{
-        grid-template-columns:repeat(2,1fr);
-    }
-
     .filters{
         flex-direction:column;
         align-items:stretch;
     }
-
-    .filters input,
-    .filters button{
-        width:100%;
-    }
-
     .export-buttons{
         margin-left:0;
         width:100%;
     }
-
-    .export-buttons button{
-        flex:1;
-    }
-
     .data-table th,
     .data-table td{
         font-size:11px;
@@ -498,47 +464,30 @@ body{
 
 <body>
 
-<!-- ENHANCED PASSWORD MODAL -->
+<!-- PASSWORD MODAL -->
 <div id="passwordModal" class="modal">
     <div class="modal-content">
         <div style="font-size:3rem; margin-bottom:8px;">🔐</div>
         <h2>Storekeeper Portal</h2>
         <p>Authorized access only</p>
-
-        <input type="password"
-        id="passwordInput"
-        placeholder="Enter secure password"
-        onkeypress="if(event.key==='Enter') checkPassword()">
-
+        <input type="password" id="passwordInput" placeholder="Enter secure password" onkeypress="if(event.key==='Enter') checkPassword()">
         <button onclick="checkPassword()">→ Access Dashboard</button>
-
         <div id="passwordError" class="error-msg"></div>
-
-        <button class="close-modal" onclick="handleBackToIndex()">
-        ← Return
-        </button>
+        <button class="close-modal" onclick="window.location.href='index.html'">← Return</button>
     </div>
 </div>
 
-<!-- MAIN -->
+<!-- MAIN CONTENT -->
 <div id="mainContent" style="display:none;">
-
     <div class="header">
         <div class="header-content">
-            <div class="logo">
-                📦
-                <span>Storekeeper | Approved Orders</span>
-            </div>
+            <div class="logo">📦 <span>Storekeeper | Approved Orders</span></div>
             <div class="header-buttons">
-                <button class="btn-header archive-btn" onclick="archiveToGoogleDrive()">
-                📤 Archive to Google Drive
+                <button class="btn-header archive-btn" onclick="downloadArchiveAndClear()">
+                📥 Download Archive & Clear
                 </button>
-                <button class="refresh-btn" onclick="manualRefresh()">
-                🔄
-                </button>
-                <button class="btn-header" onclick="window.print()">
-                🖨️ Print
-                </button>
+                <button class="refresh-btn" onclick="manualRefresh()">🔄</button>
+                <button class="btn-header" onclick="window.print()">🖨️ Print</button>
             </div>
         </div>
     </div>
@@ -548,17 +497,6 @@ body{
     </div>
 
     <div id="kitchenPagesContainer"></div>
-</div>
-
-<!-- Google Drive Auth Modal -->
-<div id="driveAuthModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:1200; justify-content:center; align-items:center;">
-    <div style="background:white; border-radius:32px; max-width:400px; width:90%; padding:30px; text-align:center;">
-        <div style="font-size:3rem;">☁️</div>
-        <h3 style="margin:15px 0; color:#1e5c3c;">Google Drive Access</h3>
-        <p style="margin-bottom:20px; color:#666;">Please allow access to save archive files to your Google Drive</p>
-        <button id="authDriveBtn" style="background:#4285f4; color:white; border:none; padding:12px 24px; border-radius:40px; font-weight:800; cursor:pointer; width:100%;">Sign in with Google</button>
-        <button id="cancelDriveBtn" style="margin-top:12px; background:#e2e8f0; border:none; padding:10px 20px; border-radius:40px; cursor:pointer; width:100%;">Cancel</button>
-    </div>
 </div>
 
 <script>
@@ -573,29 +511,15 @@ let filterState = {
     dateTo:""
 };
 
-// Google Drive API variables
-let tokenClient;
-let gapiInited = false;
-let gisInited = false;
-let accessToken = null;
-
-/* Handle back button - fixed to return to previous page */
-function handleBackToIndex() {
-    window.location.href = 'index.html';
-}
-
 /* PASSWORD CHECK */
 function checkPassword(){
-    const passwordInput = document.getElementById("passwordInput");
-    if(passwordInput.value === STOREKEEPER_PASSWORD){
+    if(document.getElementById("passwordInput").value === STOREKEEPER_PASSWORD){
         document.getElementById("passwordModal").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
         startRealtimeListener();
         showToast("✅ Login successful");
     }else{
         document.getElementById("passwordError").innerHTML = "Access denied • Incorrect password";
-        passwordInput.value = '';
-        passwordInput.focus();
     }
 }
 
@@ -605,7 +529,7 @@ function manualRefresh(){
     showToast("🔄 Refreshing...");
 }
 
-/* DATE */
+/* DATE FORMAT */
 function formatDate(dateValue){
     if(!dateValue) return "N/A";
     let d;
@@ -625,7 +549,7 @@ function formatDate(dateValue){
     });
 }
 
-/* REALTIME */
+/* REALTIME LISTENER */
 function startRealtimeListener(){
     db.collection("kitchen_requests")
     .onSnapshot(snapshot => {
@@ -661,7 +585,7 @@ async function loadApprovedOrdersOnce(){
     renderCurrentKitchen();
 }
 
-/* TABS */
+/* RENDER TABS */
 function renderTabs(){
     const kitchens = [
         "all",
@@ -688,7 +612,7 @@ function renderTabs(){
     });
 }
 
-/* PAGE RENDER */
+/* RENDER PAGE */
 function renderCurrentKitchen(){
     let orders;
     if(currentKitchen === "all"){
@@ -721,7 +645,7 @@ function renderKitchenPage(orders){
     displayOrders();
 }
 
-/* FILTER */
+/* FILTERS */
 function saveFiltersAndRender(){
     filterState.search = document.getElementById("searchInput")?.value || "";
     filterState.dateFrom = document.getElementById("dateFrom")?.value || "";
@@ -790,44 +714,89 @@ function displayOrders(){
     container.innerHTML = html;
 }
 
-async function archiveToGoogleDrive() {
+/* EASY ARCHIVE - DOWNLOAD JSON FILE & CLEAR DATABASE */
+async function downloadArchiveAndClear() {
     if(allApprovedOrders.length === 0){
         showToast("No orders to archive.");
         return;
     }
     
-    // Create JSON file and download
+    // Show confirmation dialog
+    const confirmArchive = confirm(`📦 Archive ${allApprovedOrders.length} orders?\n\nThis will:\n1. Download a JSON archive file to your computer\n2. Clear all orders from the database\n3. Remove them from this view\n\nYou can save the JSON file to Google Drive or any cloud storage.\n\nProceed?`);
+    
+    if(!confirmArchive) return;
+    
+    showToast("📦 Preparing archive...");
+    
+    // Prepare archive data with all order details
     const archiveData = {
-        archivedDate: new Date().toISOString(),
-        totalOrders: allApprovedOrders.length,
-        orders: allApprovedOrders
+        archiveInfo: {
+            archivedDate: new Date().toISOString(),
+            archivedDateReadable: new Date().toLocaleString(),
+            totalOrdersArchived: allApprovedOrders.length,
+            totalItemsArchived: allApprovedOrders.reduce((sum, order) => 
+                sum + order.items.filter(item => item.status === "approved").length, 0
+            )
+        },
+        orders: allApprovedOrders.map(order => ({
+            id: order.id,
+            requestId: order.requestId,
+            section: order.section,
+            chefName: order.chefName,
+            submittedAt: order.submittedAt,
+            submittedAtReadable: formatDate(order.submittedAt),
+            items: order.items.filter(item => item.status === "approved").map(item => ({
+                code: item.code,
+                name: item.name,
+                originalQty: item.originalQty,
+                approvedQty: item.approvedQty,
+                unit: item.unit,
+                price: item.price,
+                total: (item.approvedQty || item.originalQty || 0) * (item.price || 0),
+                approvedBy: item.approvedBy,
+                status: item.status
+            })),
+            orderTotal: order.items.filter(item => item.status === "approved").reduce((sum, item) => 
+                sum + ((item.approvedQty || item.originalQty || 0) * (item.price || 0)), 0
+            )
+        }))
     };
     
+    // Create JSON file and download
     const jsonString = JSON.stringify(archiveData, null, 2);
     const blob = new Blob([jsonString], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
     a.href = url;
-    a.download = `kitchen_archive_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+    a.download = `kitchen_archive_${timestamp}.json`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showToast("📥 Archive file downloaded. Save to Google Drive manually.");
+    showToast("✅ Archive downloaded successfully!");
     
-    // Clear orders after download
-    await clearAllArchivedOrders();
+    // Wait a moment then clear the database
+    setTimeout(async () => {
+        const confirmClear = confirm("Archive saved! Clear all orders from database now?");
+        if(confirmClear) {
+            await clearAllOrdersFromDatabase();
+        }
+    }, 500);
 }
-async function clearAllArchivedOrders() {
+
+/* CLEAR ALL ORDERS FROM FIRESTORE */
+async function clearAllOrdersFromDatabase() {
     if(allApprovedOrders.length === 0) return;
     
-    showToast("🗑️ Clearing archived orders from database...");
+    showToast("🗑️ Clearing orders from database...");
     let successCount = 0;
     let failCount = 0;
     
     for(let i = 0; i < allApprovedOrders.length; i++) {
         const order = allApprovedOrders[i];
         try {
-            // Delete the document from Firestore
             await db.collection("kitchen_requests").doc(order.id).delete();
             successCount++;
         } catch(err) {
@@ -836,9 +805,10 @@ async function clearAllArchivedOrders() {
         }
     }
     
-    showToast(`✅ Archived ${successCount} orders to Google Drive and cleared from database. ${failCount ? failCount + ' failed' : ''}`);
+    const message = `✅ Cleared ${successCount} orders from database! ${failCount ? failCount + ' failed' : ''}`;
+    showToast(message);
     
-    // Refresh the list
+    // Refresh the view
     setTimeout(() => {
         startRealtimeListener();
         loadApprovedOrdersOnce();
@@ -907,7 +877,7 @@ async function exportKitchenPDF(){
     showToast("📄 PDF Exported");
 }
 
-/* CSV */
+/* CSV EXPORT */
 function exportCSV(){
     let filtered = getFilteredOrders();
     let csv = "Request ID,Kitchen,Chef,Item,Qty,Price,Total\n";
@@ -945,16 +915,6 @@ function showToast(msg){
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2500);
 }
-
-// Enter key support for login
-document.addEventListener('DOMContentLoaded', () => {
-    const passwordInput = document.getElementById('passwordInput');
-    if(passwordInput) {
-        passwordInput.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') checkPassword();
-        });
-    }
-});
 
 window.onload = () => {
     document.getElementById("passwordModal").style.display = "flex";
