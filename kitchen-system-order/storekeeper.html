@@ -467,11 +467,11 @@ function getSafeKitchenName(kitchenName) {
 function getCurrentKitchenDisplayName() {
     return currentKitchen === "all" ? "All Kitchens" : currentKitchen;
 }
-
+<script>
 function returnToDashboard() {
-    document.getElementById("passwordModal").style.display = "none";
-    showToast("Returning to index.html");
+    window.location.href = "index.html";
 }
+</script>
 
 function checkPassword() {
     const input = document.getElementById("passwordInput");
@@ -822,7 +822,7 @@ async function exportKitchenPDF() {
         doc.setTextColor(150, 150, 150);
         doc.setFont("helvetica", "italic");
         doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 20, 285);
-        doc.text("Kitchen Orders Report - Storekeeper Dashboard", leftMargin, 285);
+        doc.text("Kitchen Orders Report -  Dashboard", leftMargin, 285);
         doc.setDrawColor(220, 220, 220);
         doc.line(leftMargin, 280, pageWidth - rightMargin, 280);
     }
