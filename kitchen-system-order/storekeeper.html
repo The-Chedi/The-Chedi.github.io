@@ -630,379 +630,468 @@ function displayOrders() {
 }
 
 // ============ IMPROVED PDF GENERATION ============
+
+<!-- ============ PREMIUM PDF EXPORT ============ -->
+<script>
+
 async function exportKitchenPDF() {
+
     let filtered = getFilteredOrders();
-    filtered = filtered.filter(order => order.items.some(item => item.status === "approved"));
-    
+
+    filtered = filtered.filter(order =>
+        order.items.some(item => item.status === "approved")
+    );
+
     if (filtered.length === 0) {
         showToast("No data to export");
         return;
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    
-    const kitchenName = getCurrentKitchenDisplayName();
-    const safeName = getSafeKitchenName(currentKitchen);
-    const today = new Date().toISOString().slice(0, 10);
-    const filename = `${safeName}_report_${today}.pdf`;
-    
-    let yOffset = 25;
-    const leftMargin = 15;
-    const rightMargin = 15;
-    const pageWidth = 210;
-    
-    function checkPage(needed) {
-        if (yOffset + needed > 280) {
-            doc.addPage();
-            yOffset = 25;
-            return true;
-        }
-        return false;
-    }
-    
-    // ========== HEADER ==========
-    doc.setFontSize(24);
-    doc.setTextColor(30, 92, 60);
-    doc.setFont("helvetica", "bold");
-    doc.text("📦 KITCHEN ORDERS REPORT", leftMargin, yOffset);
-    yOffset += 12;
-    
-    // Divider line
-    doc.setDrawColor(30, 92, 60);
-    doc.setLineWidth(0.5);
-    doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
-    yOffset += 8;
-    
-    // Report info
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Kitchen: ${kitchenName}`, leftMargin, yOffset);
-    yOffset += 6;
-    doc.text(`Generated: ${new Date().toLocaleString()}`, leftMargin, yOffset);
-    yOffset += 6;
-    
-    const fromDate = filterState.dateFrom || "All";
-    const toDate = filterState.dateTo || "All";
-    doc.text(`Date Range: ${fromDate} to ${toDate}`, leftMargin, yOffset);
-    yOffset += 10;
-    
-    // ========== SUMMARY BOX ==========
-    let totalItemsCount = 0;
-    let grandTotal = 0;
-    filtered.forEach(order => {
-        order.items.filter(i => i.status === "approved").forEach(item => {
-            const qty = item.approvedQty || item.originalQty || 0;
-            totalItemsCount += qty;
-            grandTotal += qty * (item.price || 0);
-        });
-    });
-    
-    // Summary box background
-    doc.setFillColor(240, 248, 240);
-    doc.rect(leftMargin, yOffset, 180, 28, 'F');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 92, 60);
-    doc.setFont("helvetica", "bold");
-    doc.text("SUMMARY", leftMargin + 5, yOffset + 6);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Total Orders: ${filtered.length}`, leftMargin + 5, yOffset + 14);
-    doc.text(`Total Items: ${totalItemsCount.toFixed(1)}`, leftMargin + 5, yOffset + 22);
-    doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, leftMargin + 100, yOffset + 14);
-    yOffset += 36;
-    
-    // ========== PROCESS EACH ORDER ==========
-    for (let i = 0; i < filtered.length; i++) {
-        const order = filtered[i];
-        const approvedItems = order.items.filter(item => item.status === "approved");
-        if (approvedItems.length === 0) continue;
-        
-        checkPage(50);
-        
-        // Order number and ID
-        doc.setFillColor(245, 250, 245);
-        doc.rect(leftMargin, yOffset - 3, 180, 10, 'F');
-        doc.setFontSize(11);
-        doc.setTextColor(30, 92, 60);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${i + 1}. ${order.requestId || order.id}`, leftMargin, yOffset);
-        yOffset += 6;
-        
-        // Order meta info
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.setFont("helvetica", "italic");
-        doc.text(`Kitchen: ${order.section || "N/A"}`, leftMargin, yOffset);
-        doc.text(`Chef: ${order.chefName || "N/A"}`, leftMargin + 70, yOffset);
-        doc.text(`Date: ${formatDateOnly(order.submittedAt)}`, leftMargin + 130, yOffset);
-        yOffset += 8;
-        
-        // Build table data
-        const tableData = [];
-        let orderTotal = 0;
-        
-        approvedItems.forEach(item => {
-            const qty = item.approvedQty || item.originalQty || 0;
-            const price = item.price || 0;
-            const total = qty * price;
-            orderTotal += total;
-            tableData.push([
-                item.code || "-",
-                (item.name || "-").length > 35 ? item.name.substring(0, 32) + "..." : item.name || "-",
-                qty.toString(),
-                item.unit || "-",
-                price.toFixed(2),
-                total.toFixed(2),
-                item.approvedBy || "-"
-            ]);
-        });
-        
-        // Create beautiful table
-        doc.autoTable({
-            startY: yOffset,
-            head: [["Code", "Item", "Qty", "Unit", "Price (EGP)", "Total (EGP)", "Approved By"]],
-            body: tableData,
-            theme: 'striped',
-            styles: { 
-                fontSize: 8, 
-                cellPadding: 4, 
-                textColor: [50, 50, 50],
-                font: "helvetica"
-            },
-            headStyles: { 
-                fillColor: [30, 92, 60], 
-                textColor: [255, 255, 255], 
-                fontStyle: 'bold', 
-                fontSize: 8,
-                halign: 'center'
-            },
-            alternateRowStyles: { fillColor: [245, 250, 245] },
-            margin: { left: leftMargin, right: rightMargin },
-            columnStyles: {
-                0: { cellWidth: 18, halign: 'center' },
-                1: { cellWidth: 52 },
-                2: { cellWidth: 12, halign: 'center' },
-                3: { cellWidth: 15, halign: 'center' },
-                4: { cellWidth: 20, halign: 'right' },
-                5: { cellWidth: 22, halign: 'right' },
-                6: { cellWidth: 22, halign: 'center' }
-            },
-            didDrawPage: function(data) {
-                // This prevents page content issues
-            }
-        });
-        
-        yOffset = doc.lastAutoTable.finalY + 5;
-        
-        // Order total line
-        checkPage(15);
-        doc.setDrawColor(220, 230, 220);
-        doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
-        yOffset += 4;
-        doc.setFontSize(10);
-        doc.setTextColor(30, 92, 60);
-        doc.setFont("helvetica", "bold");
-        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, pageWidth - rightMargin - 55, yOffset);
-        yOffset += 12;
-        
-        // Separator between orders (except last)
-        if (i < filtered.length - 1) {
-            checkPage(15);
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.3);
-            doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
-            yOffset += 8;
-        }
-    }
-    
-    // ========== FOOTER ON ALL PAGES ==========
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.setFont("helvetica", "italic");
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 25, 285);
-        doc.text("Kitchen Orders Report - Storekeeper Dashboard", leftMargin, 285);
-        doc.setDrawColor(220, 220, 220);
-        doc.line(leftMargin, 280, pageWidth - rightMargin, 280);
-    }
-    
-    doc.save(filename);
-    showToast(`📄 PDF Exported as "${filename}"`);
-}
 
-// ============ IMPROVED ARCHIVE PDF ============
-async function archiveAsPDFAndClear() {
-    if (allApprovedOrders.length === 0) {
-        showToast("No orders to archive");
-        return;
-    }
-    
-    if (!confirm(`📦 Archive ${allApprovedOrders.length} orders as PDF?\n\nThis will:\n1. Create a PDF archive report\n2. Download the PDF\n3. Clear all orders from database\n\nProceed?`)) return;
-    
-    showToast("📄 Creating PDF archive...");
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+    });
+
     const kitchenName = getCurrentKitchenDisplayName();
     const safeName = getSafeKitchenName(currentKitchen);
-    const today = new Date().toISOString().slice(0, 10);
-    const filename = `${safeName}_orders_${today}.pdf`;
-    
-    let yOffset = 25;
-    const leftMargin = 15;
-    const rightMargin = 15;
-    const pageWidth = 210;
-    
-    function checkPage(needed) {
-        if (yOffset + needed > 280) {
-            doc.addPage();
-            yOffset = 25;
-            return true;
-        }
-        return false;
-    }
-    
-    // Header
-    doc.setFontSize(24);
-    doc.setTextColor(30, 92, 60);
-    doc.setFont("helvetica", "bold");
-    doc.text("📦 KITCHEN ORDERS ARCHIVE", leftMargin, yOffset);
-    yOffset += 12;
-    
-    doc.setDrawColor(30, 92, 60);
-    doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
-    yOffset += 8;
-    
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Kitchen: ${kitchenName}`, leftMargin, yOffset);
-    yOffset += 6;
-    doc.text(`Archive Date: ${new Date().toLocaleString()}`, leftMargin, yOffset);
-    yOffset += 6;
-    doc.text(`Total Orders: ${allApprovedOrders.length}`, leftMargin, yOffset);
-    yOffset += 6;
-    
-    let totalItems = 0;
+
+    const today = new Date().toISOString().slice(0,10);
+
+    const filename = `${safeName}_premium_report_${today}.pdf`;
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const left = 14;
+    const right = 14;
+
     let grandTotal = 0;
-    allApprovedOrders.forEach(order => {
-        order.items.filter(i => i.status === "approved").forEach(item => {
-            const qty = item.approvedQty || item.originalQty || 0;
-            totalItems += qty;
-            grandTotal += qty * (item.price || 0);
-        });
+    let totalItems = 0;
+
+    filtered.forEach(order => {
+
+        order.items
+            .filter(i => i.status === "approved")
+            .forEach(item => {
+
+                const qty =
+                    item.approvedQty ||
+                    item.originalQty ||
+                    0;
+
+                totalItems += qty;
+
+                grandTotal += qty * (item.price || 0);
+
+            });
+
     });
-    doc.text(`Total Items: ${totalItems.toFixed(1)}`, leftMargin, yOffset);
-    yOffset += 6;
-    doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, leftMargin, yOffset);
-    yOffset += 12;
-    
-    // Process orders
-    for (let i = 0; i < allApprovedOrders.length; i++) {
-        const order = allApprovedOrders[i];
-        const approvedItems = order.items.filter(item => item.status === "approved");
-        if (approvedItems.length === 0) continue;
-        
-        checkPage(50);
-        
-        doc.setFillColor(245, 250, 245);
-        doc.rect(leftMargin, yOffset - 3, 180, 10, 'F');
-        doc.setFontSize(11);
-        doc.setTextColor(30, 92, 60);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${i + 1}. ${order.requestId || order.id}`, leftMargin, yOffset);
-        yOffset += 6;
-        
+
+    // ===== HEADER =====
+    function drawHeader(pageNo) {
+
+        doc.setFillColor(30, 92, 60);
+        doc.rect(0, 0, pageWidth, 24, "F");
+
+        doc.setTextColor(255,255,255);
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(20);
+
+        doc.text(
+            "KITCHEN ORDERS REPORT",
+            left,
+            14
+        );
+
+        doc.setFont("helvetica","normal");
         doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.setFont("helvetica", "italic");
-        doc.text(`Kitchen: ${order.section || "N/A"}`, leftMargin, yOffset);
-        doc.text(`Chef: ${order.chefName || "N/A"}`, leftMargin + 70, yOffset);
-        doc.text(`Date: ${formatDateOnly(order.submittedAt)}`, leftMargin + 130, yOffset);
-        yOffset += 8;
-        
-        const tableData = [];
-        let orderTotal = 0;
-        
-        approvedItems.forEach(item => {
-            const qty = item.approvedQty || item.originalQty || 0;
-            const price = item.price || 0;
-            const total = qty * price;
-            orderTotal += total;
-            tableData.push([
-                item.code || "-",
-                (item.name || "-").length > 35 ? item.name.substring(0, 32) + "..." : item.name || "-",
-                qty.toString(),
-                item.unit || "-",
-                price.toFixed(2),
-                total.toFixed(2),
-                item.approvedBy || "-"
-            ]);
-        });
-        
-        doc.autoTable({
-            startY: yOffset,
-            head: [["Code", "Item", "Qty", "Unit", "Price (EGP)", "Total (EGP)", "Approved By"]],
-            body: tableData,
-            theme: 'striped',
-            styles: { fontSize: 8, cellPadding: 4 },
-            headStyles: { fillColor: [30, 92, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [245, 250, 245] },
-            margin: { left: leftMargin, right: rightMargin },
-            columnStyles: {
-                0: { cellWidth: 18, halign: 'center' },
-                1: { cellWidth: 52 },
-                2: { cellWidth: 12, halign: 'center' },
-                3: { cellWidth: 15, halign: 'center' },
-                4: { cellWidth: 20, halign: 'right' },
-                5: { cellWidth: 22, halign: 'right' },
-                6: { cellWidth: 22, halign: 'center' }
-            }
-        });
-        
-        yOffset = doc.lastAutoTable.finalY + 5;
-        
-        checkPage(15);
-        doc.setFontSize(10);
-        doc.setTextColor(30, 92, 60);
-        doc.setFont("helvetica", "bold");
-        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, pageWidth - rightMargin - 55, yOffset);
-        yOffset += 12;
-        
-        if (i < allApprovedOrders.length - 1) {
-            checkPage(10);
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.3);
-            doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
-            yOffset += 8;
-        }
-    }
-    
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
+
+        doc.text(
+            `Kitchen: ${kitchenName}`,
+            left,
+            20
+        );
+
+        doc.text(
+            new Date().toLocaleString(),
+            pageWidth - 65,
+            20
+        );
+
+        // Footer
+        doc.setDrawColor(220);
+        doc.line(
+            left,
+            pageHeight - 12,
+            pageWidth - right,
+            pageHeight - 12
+        );
+
         doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.setFont("helvetica", "italic");
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 25, 285);
-        doc.text("Kitchen Orders Archive - Storekeeper Dashboard", leftMargin, 285);
-        doc.setDrawColor(220, 220, 220);
-        doc.line(leftMargin, 280, pageWidth - rightMargin, 280);
+        doc.setTextColor(120);
+
+        doc.text(
+            "Storekeeper Dashboard • Kitchen Orders",
+            left,
+            pageHeight - 6
+        );
+
+        doc.text(
+            `Page ${pageNo}`,
+            pageWidth - 24,
+            pageHeight - 6
+        );
     }
-    
-    doc.save(filename);
-    showToast(`✅ PDF Archive saved as "${filename}"`);
-    
-    setTimeout(async () => {
-        if (confirm("PDF archive created! Clear all orders from database now?")) {
-            await clearAllOrdersFromDatabase();
+
+    drawHeader(1);
+
+    let y = 34;
+
+    // ===== SUMMARY BOX =====
+    doc.setFillColor(242,248,243);
+
+    doc.roundedRect(
+        left,
+        y,
+        182,
+        28,
+        4,
+        4,
+        "F"
+    );
+
+    doc.setTextColor(30,92,60);
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(12);
+
+    doc.text(
+        "REPORT SUMMARY",
+        left + 5,
+        y + 8
+    );
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+
+    doc.text(
+        `Total Orders: ${filtered.length}`,
+        left + 5,
+        y + 18
+    );
+
+    doc.text(
+        `Total Items: ${totalItems}`,
+        left + 65,
+        y + 18
+    );
+
+    doc.text(
+        `Grand Total: ${grandTotal.toFixed(2)} EGP`,
+        left + 115,
+        y + 18
+    );
+
+    y += 40;
+
+    // ===== PROCESS ORDERS =====
+    filtered.forEach((order, index) => {
+
+        const approvedItems =
+            order.items.filter(
+                item => item.status === "approved"
+            );
+
+        if (approvedItems.length === 0) return;
+
+        // Auto page break
+        if (y > 230) {
+
+            doc.addPage();
+
+            drawHeader(
+                doc.internal.getNumberOfPages()
+            );
+
+            y = 34;
         }
-    }, 1000);
+
+        // ===== ORDER HEADER =====
+        doc.setFillColor(245,248,250);
+
+        doc.roundedRect(
+            left,
+            y,
+            182,
+            14,
+            3,
+            3,
+            "F"
+        );
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(11);
+
+        doc.setTextColor(30,92,60);
+
+        doc.text(
+            `${index + 1}. ${order.requestId || order.id}`,
+            left + 4,
+            y + 9
+        );
+
+        y += 19;
+
+        // ===== ORDER META =====
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(9);
+
+        doc.setTextColor(110);
+
+        doc.text(
+            `Kitchen: ${order.section || "N/A"}`,
+            left,
+            y
+        );
+
+        doc.text(
+            `Chef: ${order.chefName || "N/A"}`,
+            left + 70,
+            y
+        );
+
+        doc.text(
+            `Date: ${formatDateOnly(order.submittedAt)}`,
+            left + 130,
+            y
+        );
+
+        y += 6;
+
+        // ===== TABLE DATA =====
+        let tableData = [];
+        let orderTotal = 0;
+
+        approvedItems.forEach(item => {
+
+            const qty =
+                item.approvedQty ||
+                item.originalQty ||
+                0;
+
+            const price = item.price || 0;
+
+            const total = qty * price;
+
+            orderTotal += total;
+
+            tableData.push([
+
+                item.code || "-",
+
+                item.name || "-",
+
+                qty,
+
+                item.unit || "-",
+
+                price.toFixed(2),
+
+                total.toFixed(2),
+
+                item.approvedBy || "-"
+
+            ]);
+
+        });
+
+        // ===== TABLE =====
+        doc.autoTable({
+
+            startY: y,
+
+            head: [[
+                "Code",
+                "Item",
+                "Qty",
+                "Unit",
+                "Price",
+                "Total",
+                "Approved By"
+            ]],
+
+            body: tableData,
+
+            theme: "grid",
+
+            margin: {
+                left: left,
+                right: right
+            },
+
+            styles: {
+
+                fontSize: 8,
+
+                cellPadding: 3,
+
+                overflow: "linebreak",
+
+                valign: "middle"
+
+            },
+
+            headStyles: {
+
+                fillColor: [30,92,60],
+
+                textColor: [255,255,255],
+
+                fontStyle: "bold",
+
+                halign: "center"
+
+            },
+
+            alternateRowStyles: {
+
+                fillColor: [248,250,248]
+
+            },
+
+            columnStyles: {
+
+                0: {
+                    cellWidth: 18,
+                    halign: "center"
+                },
+
+                1: {
+                    cellWidth: 60
+                },
+
+                2: {
+                    cellWidth: 14,
+                    halign: "center"
+                },
+
+                3: {
+                    cellWidth: 16,
+                    halign: "center"
+                },
+
+                4: {
+                    cellWidth: 22,
+                    halign: "right"
+                },
+
+                5: {
+                    cellWidth: 24,
+                    halign: "right"
+                },
+
+                6: {
+                    cellWidth: 28,
+                    halign: "center"
+                }
+
+            },
+
+            didDrawPage: function(data) {
+
+                drawHeader(
+                    doc.internal.getCurrentPageInfo().pageNumber
+                );
+
+            }
+
+        });
+
+        y = doc.lastAutoTable.finalY + 6;
+
+        // ===== ORDER TOTAL =====
+        doc.setFillColor(255,248,220);
+
+        doc.roundedRect(
+            pageWidth - 74,
+            y,
+            60,
+            10,
+            2,
+            2,
+            "F"
+        );
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(10);
+
+        doc.setTextColor(120,90,20);
+
+        doc.text(
+            `Total: ${orderTotal.toFixed(2)} EGP`,
+            pageWidth - 68,
+            y + 6.5
+        );
+
+        y += 18;
+
+    });
+
+    // ===== FINAL TOTAL =====
+    if (y > 240) {
+
+        doc.addPage();
+
+        drawHeader(
+            doc.internal.getNumberOfPages()
+        );
+
+        y = 40;
+    }
+
+    doc.setDrawColor(220);
+
+    doc.line(
+        left,
+        y,
+        pageWidth - right,
+        y
+    );
+
+    y += 12;
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(16);
+
+    doc.setTextColor(30,92,60);
+
+    doc.text(
+        `FINAL GRAND TOTAL: ${grandTotal.toFixed(2)} EGP`,
+        left,
+        y
+    );
+
+    y += 12;
+
+    doc.setFont("helvetica","italic");
+    doc.setFontSize(10);
+
+    doc.setTextColor(120);
+
+    doc.text(
+        "Automatically generated by Storekeeper Dashboard",
+        left,
+        y
+    );
+
+    // ===== SAVE =====
+    doc.save(filename);
+
+    showToast("📄 Premium PDF Exported Successfully");
 }
 
 async function clearAllOrdersFromDatabase() {
