@@ -444,20 +444,24 @@ let currentKitchen = "all";
 let allApprovedOrders = [];
 let filterState = { search: "", dateFrom: "", dateTo: "" };
 
-// REPLACE the getSafeKitchenName function with this improved version:
-
+// ============ FIXED: Safe filename generator ============
 function getSafeKitchenName(kitchenName) {
-    if (kitchenName === "all") return "all_kitchens";
+    // If kitchenName is undefined, null, or "all", use "all_kitchens"
+    if (!kitchenName || kitchenName === "all") {
+        return "all_kitchens";
+    }
     
-    // Remove any special characters, replace spaces with underscores
-    let safe = kitchenName
+    // Convert to string and clean
+    let safe = String(kitchenName)
         .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')  // Remove special characters like / 
-        .replace(/\s+/g, '_')          // Replace spaces with underscores
+        .replace(/[^a-z0-9\s]/g, '')   // Remove special characters like /, \, etc.
+        .replace(/\s+/g, '_')           // Replace spaces with underscores
         .trim();
     
-    // Handle empty result
-    if (safe === "") return "kitchen";
+    // If result is empty, use fallback
+    if (safe === "") {
+        return "all_kitchens";
+    }
     
     return safe;
 }
@@ -642,7 +646,7 @@ function displayOrders() {
     container.innerHTML = html;
 }
 
-// ============ PREMIUM PDF EXPORT ============
+// ============ FIXED: PREMIUM PDF EXPORT with proper filename ============
 async function exportKitchenPDF() {
     let filtered = getFilteredOrders();
     filtered = filtered.filter(order => order.items.some(item => item.status === "approved"));
@@ -655,10 +659,19 @@ async function exportKitchenPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     
-    const kitchenName = getCurrentKitchenDisplayName();
-    const safeName = getSafeKitchenName(currentKitchen);
+    // Get kitchen name safely with fallback
+    let kitchenDisplayName = "All Kitchens";
+    let kitchenSafeName = "all_kitchens";
+    
+    if (currentKitchen && currentKitchen !== "all") {
+        kitchenDisplayName = currentKitchen;
+        kitchenSafeName = getSafeKitchenName(currentKitchen);
+    }
+    
     const today = new Date().toISOString().slice(0, 10);
-    const filename = `${safeName}_premium_report_${today}.pdf`;
+    const filename = `${kitchenSafeName}_report_${today}.pdf`;
+    
+    console.log("Exporting PDF:", filename); // Debug log
     
     const pageWidth = doc.internal.pageSize.getWidth();
     const left = 14;
@@ -675,7 +688,6 @@ async function exportKitchenPDF() {
         });
     });
     
-    // ===== HEADER FUNCTION =====
     function drawHeader(pageNo) {
         doc.setFillColor(30, 92, 60);
         doc.rect(0, 0, pageWidth, 24, "F");
@@ -685,10 +697,9 @@ async function exportKitchenPDF() {
         doc.text("KITCHEN ORDERS REPORT", left, 14);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
-        doc.text(`Kitchen: ${kitchenName}`, left, 20);
+        doc.text(`Kitchen: ${kitchenDisplayName}`, left, 20);
         doc.text(new Date().toLocaleString(), pageWidth - 65, 20);
         
-        // Footer
         doc.setDrawColor(220);
         doc.line(left, 285, pageWidth - right, 285);
         doc.setFontSize(8);
@@ -700,7 +711,6 @@ async function exportKitchenPDF() {
     drawHeader(1);
     let y = 34;
     
-    // ===== SUMMARY BOX =====
     doc.setFillColor(242, 248, 243);
     doc.roundedRect(left, y, 182, 28, 4, 4, "F");
     doc.setTextColor(30, 92, 60);
@@ -714,7 +724,6 @@ async function exportKitchenPDF() {
     doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, left + 115, y + 18);
     y += 40;
     
-    // ===== PROCESS ORDERS =====
     for (let idx = 0; idx < filtered.length; idx++) {
         const order = filtered[idx];
         const approvedItems = order.items.filter(item => item.status === "approved");
@@ -726,7 +735,6 @@ async function exportKitchenPDF() {
             y = 34;
         }
         
-        // Order Header
         doc.setFillColor(245, 248, 250);
         doc.roundedRect(left, y, 182, 14, 3, 3, "F");
         doc.setFont("helvetica", "bold");
@@ -735,7 +743,6 @@ async function exportKitchenPDF() {
         doc.text(`${idx + 1}. ${order.requestId || order.id}`, left + 4, y + 9);
         y += 19;
         
-        // Order Meta
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(110);
@@ -744,7 +751,6 @@ async function exportKitchenPDF() {
         doc.text(`Date: ${formatDateOnly(order.submittedAt)}`, left + 130, y);
         y += 6;
         
-        // Table Data
         let tableData = [];
         let orderTotal = 0;
         
@@ -764,7 +770,6 @@ async function exportKitchenPDF() {
             ]);
         });
         
-        // Table
         doc.autoTable({
             startY: y,
             head: [["Code", "Item", "Qty", "Unit", "Price", "Total", "Approved By"]],
@@ -790,7 +795,6 @@ async function exportKitchenPDF() {
         
         y = doc.lastAutoTable.finalY + 6;
         
-        // Order Total
         doc.setFillColor(255, 248, 220);
         doc.roundedRect(pageWidth - 74, y, 60, 10, 2, 2, "F");
         doc.setFont("helvetica", "bold");
@@ -800,7 +804,6 @@ async function exportKitchenPDF() {
         y += 18;
     }
     
-    // Final Grand Total
     if (y > 240) {
         doc.addPage();
         drawHeader(doc.internal.getNumberOfPages());
@@ -821,10 +824,10 @@ async function exportKitchenPDF() {
     doc.text("Automatically generated by Storekeeper Dashboard", left, y);
     
     doc.save(filename);
-    showToast("📄 Premium PDF Exported Successfully");
+    showToast(`📄 PDF Exported: ${filename}`);
 }
 
-// ============ ARCHIVE PDF ============
+// ============ FIXED: ARCHIVE PDF with proper filename ============
 async function archiveAsPDFAndClear() {
     if (allApprovedOrders.length === 0) {
         showToast("No orders to archive");
@@ -838,10 +841,17 @@ async function archiveAsPDFAndClear() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     
-    const kitchenName = getCurrentKitchenDisplayName();
-    const safeName = getSafeKitchenName(currentKitchen);
+    // Get kitchen name safely with fallback
+    let kitchenDisplayName = "All Kitchens";
+    let kitchenSafeName = "all_kitchens";
+    
+    if (currentKitchen && currentKitchen !== "all") {
+        kitchenDisplayName = currentKitchen;
+        kitchenSafeName = getSafeKitchenName(currentKitchen);
+    }
+    
     const today = new Date().toISOString().slice(0, 10);
-    const filename = `${safeName}_archive_${today}.pdf`;
+    const filename = `${kitchenSafeName}_archive_${today}.pdf`;
     
     const pageWidth = doc.internal.pageSize.getWidth();
     const left = 14;
@@ -867,7 +877,7 @@ async function archiveAsPDFAndClear() {
         doc.text("KITCHEN ORDERS ARCHIVE", left, 14);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
-        doc.text(`Kitchen: ${kitchenName}`, left, 20);
+        doc.text(`Kitchen: ${kitchenDisplayName}`, left, 20);
         doc.text(new Date().toLocaleString(), pageWidth - 65, 20);
         
         doc.setDrawColor(220);
@@ -881,7 +891,6 @@ async function archiveAsPDFAndClear() {
     drawArchiveHeader(1);
     let y = 34;
     
-    // Summary
     doc.setFillColor(242, 248, 243);
     doc.roundedRect(left, y, 182, 28, 4, 4, "F");
     doc.setTextColor(30, 92, 60);
@@ -895,7 +904,6 @@ async function archiveAsPDFAndClear() {
     doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, left + 115, y + 18);
     y += 40;
     
-    // Process orders
     for (let idx = 0; idx < allApprovedOrders.length; idx++) {
         const order = allApprovedOrders[idx];
         const approvedItems = order.items.filter(item => item.status === "approved");
@@ -991,7 +999,7 @@ async function archiveAsPDFAndClear() {
     doc.text(`ARCHIVE GRAND TOTAL: ${grandTotal.toFixed(2)} EGP`, left, y);
     
     doc.save(filename);
-    showToast(`✅ PDF Archive saved as "${filename}"`);
+    showToast(`✅ PDF Archive: ${filename}`);
     
     setTimeout(async () => {
         if (confirm("PDF archive created! Clear all orders from database now?")) {
@@ -1027,9 +1035,13 @@ function exportCSV() {
             }
         });
     });
-    const safeName = getSafeKitchenName(currentKitchen);
+    
+    let kitchenSafeName = "all_kitchens";
+    if (currentKitchen && currentKitchen !== "all") {
+        kitchenSafeName = getSafeKitchenName(currentKitchen);
+    }
     const today = new Date().toISOString().slice(0, 10);
-    downloadCSV(csv, `${safeName}_report_${today}.csv`);
+    downloadCSV(csv, `${kitchenSafeName}_report_${today}.csv`);
     showToast("📊 CSV Exported");
 }
 
