@@ -10,7 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<!-- jsPDF with correct order -->
+<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
@@ -54,15 +54,6 @@ body {
     background: linear-gradient(135deg, #7f8c8d, #6c7a7b) !important;
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(0,0,0,0.18);
-}
-
-.return-btn:active {
-    transform: scale(0.98);
-}
-
-.return-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(127,140,141,0.25);
 }
 
 .header-content {
@@ -631,14 +622,14 @@ function displayOrders() {
             const price = item.price || 0;
             const rowTotal = qty * price;
             total += rowTotal;
-            html += `<tr><td>${item.code || ""}</td><td>${escapeHtml(item.name)}</td><td>${qty}</td><td>${item.unit || ""}</td><td>${price.toFixed(2)}</td><td>${rowTotal.toFixed(2)}</td><td><span class="badge-approved">✔ ${item.approvedBy || ""}</span></td></tr>`;
+            html += `<tr><td style="font-family:monospace;">${item.code || ""}</td><td><strong>${escapeHtml(item.name)}</strong></td><td>${qty}</td><td>${item.unit || ""}</td><td>${price.toFixed(2)}</td><td>${rowTotal.toFixed(2)}</td><td><span class="badge-approved">✔ ${item.approvedBy || ""}</span></td></tr>`;
         });
         html += `</tbody></table></div><div style="padding:10px 15px; background:#f0fdf4; text-align:right;"><span class="order-total">💰 Order Total: ${total.toFixed(2)} EGP</span></div></div>`;
     });
     container.innerHTML = html;
 }
 
-// IMPROVED PDF GENERATION
+// ============ IMPROVED PDF GENERATION ============
 async function exportKitchenPDF() {
     let filtered = getFilteredOrders();
     filtered = filtered.filter(order => order.items.some(item => item.status === "approved"));
@@ -656,33 +647,34 @@ async function exportKitchenPDF() {
     const today = new Date().toISOString().slice(0, 10);
     const filename = `${safeName}_report_${today}.pdf`;
     
-    // Page setup
-    let yOffset = 20;
+    let yOffset = 25;
     const leftMargin = 15;
     const rightMargin = 15;
     const pageWidth = 210;
     
-    // Helper to add new page
     function checkPage(needed) {
         if (yOffset + needed > 280) {
             doc.addPage();
-            yOffset = 20;
+            yOffset = 25;
             return true;
         }
         return false;
     }
     
-    // ========== HEADER SECTION ==========
-    doc.setFontSize(22);
+    // ========== HEADER ==========
+    doc.setFontSize(24);
     doc.setTextColor(30, 92, 60);
     doc.setFont("helvetica", "bold");
     doc.text("📦 KITCHEN ORDERS REPORT", leftMargin, yOffset);
     yOffset += 12;
     
-    doc.setDrawColor(200, 220, 200);
+    // Divider line
+    doc.setDrawColor(30, 92, 60);
+    doc.setLineWidth(0.5);
     doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
     yOffset += 8;
     
+    // Report info
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
     doc.setFont("helvetica", "normal");
@@ -694,8 +686,9 @@ async function exportKitchenPDF() {
     const fromDate = filterState.dateFrom || "All";
     const toDate = filterState.dateTo || "All";
     doc.text(`Date Range: ${fromDate} to ${toDate}`, leftMargin, yOffset);
-    yOffset += 6;
+    yOffset += 10;
     
+    // ========== SUMMARY BOX ==========
     let totalItemsCount = 0;
     let grandTotal = 0;
     filtered.forEach(order => {
@@ -706,15 +699,19 @@ async function exportKitchenPDF() {
         });
     });
     
+    // Summary box background
     doc.setFillColor(240, 248, 240);
-    doc.rect(leftMargin, yOffset, 180, 30, 'F');
-    doc.setFontSize(9);
+    doc.rect(leftMargin, yOffset, 180, 28, 'F');
+    doc.setFontSize(10);
     doc.setTextColor(30, 92, 60);
-    doc.text(`📊 Summary:`, leftMargin + 5, yOffset + 6);
+    doc.setFont("helvetica", "bold");
+    doc.text("SUMMARY", leftMargin + 5, yOffset + 6);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
     doc.text(`Total Orders: ${filtered.length}`, leftMargin + 5, yOffset + 14);
-    doc.text(`Total Items: ${totalItemsCount}`, leftMargin + 5, yOffset + 22);
+    doc.text(`Total Items: ${totalItemsCount.toFixed(1)}`, leftMargin + 5, yOffset + 22);
     doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, leftMargin + 100, yOffset + 14);
-    yOffset += 38;
+    yOffset += 36;
     
     // ========== PROCESS EACH ORDER ==========
     for (let i = 0; i < filtered.length; i++) {
@@ -724,20 +721,25 @@ async function exportKitchenPDF() {
         
         checkPage(50);
         
+        // Order number and ID
         doc.setFillColor(245, 250, 245);
-        doc.rect(leftMargin, yOffset - 3, 180, 12, 'F');
+        doc.rect(leftMargin, yOffset - 3, 180, 10, 'F');
         doc.setFontSize(11);
         doc.setTextColor(30, 92, 60);
         doc.setFont("helvetica", "bold");
         doc.text(`${i + 1}. ${order.requestId || order.id}`, leftMargin, yOffset);
         yOffset += 6;
         
+        // Order meta info
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Kitchen: ${order.section || "N/A"}  |  Chef: ${order.chefName || "N/A"}  |  Date: ${formatDateOnly(order.submittedAt)}`, leftMargin, yOffset);
-        yOffset += 10;
+        doc.setFont("helvetica", "italic");
+        doc.text(`Kitchen: ${order.section || "N/A"}`, leftMargin, yOffset);
+        doc.text(`Chef: ${order.chefName || "N/A"}`, leftMargin + 70, yOffset);
+        doc.text(`Date: ${formatDateOnly(order.submittedAt)}`, leftMargin + 130, yOffset);
+        yOffset += 8;
         
+        // Build table data
         const tableData = [];
         let orderTotal = 0;
         
@@ -748,7 +750,7 @@ async function exportKitchenPDF() {
             orderTotal += total;
             tableData.push([
                 item.code || "-",
-                (item.name || "-").length > 30 ? item.name.substring(0, 27) + "..." : item.name || "-",
+                (item.name || "-").length > 35 ? item.name.substring(0, 32) + "..." : item.name || "-",
                 qty.toString(),
                 item.unit || "-",
                 price.toFixed(2),
@@ -757,28 +759,44 @@ async function exportKitchenPDF() {
             ]);
         });
         
+        // Create beautiful table
         doc.autoTable({
             startY: yOffset,
             head: [["Code", "Item", "Qty", "Unit", "Price (EGP)", "Total (EGP)", "Approved By"]],
             body: tableData,
             theme: 'striped',
-            styles: { fontSize: 8, cellPadding: 3, textColor: [50, 50, 50] },
-            headStyles: { fillColor: [30, 92, 60], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+            styles: { 
+                fontSize: 8, 
+                cellPadding: 4, 
+                textColor: [50, 50, 50],
+                font: "helvetica"
+            },
+            headStyles: { 
+                fillColor: [30, 92, 60], 
+                textColor: [255, 255, 255], 
+                fontStyle: 'bold', 
+                fontSize: 8,
+                halign: 'center'
+            },
             alternateRowStyles: { fillColor: [245, 250, 245] },
             margin: { left: leftMargin, right: rightMargin },
             columnStyles: {
-                0: { cellWidth: 20 },
-                1: { cellWidth: 55 },
-                2: { cellWidth: 15, halign: 'center' },
+                0: { cellWidth: 18, halign: 'center' },
+                1: { cellWidth: 52 },
+                2: { cellWidth: 12, halign: 'center' },
                 3: { cellWidth: 15, halign: 'center' },
                 4: { cellWidth: 20, halign: 'right' },
                 5: { cellWidth: 22, halign: 'right' },
-                6: { cellWidth: 25 }
+                6: { cellWidth: 22, halign: 'center' }
+            },
+            didDrawPage: function(data) {
+                // This prevents page content issues
             }
         });
         
         yOffset = doc.lastAutoTable.finalY + 5;
         
+        // Order total line
         checkPage(15);
         doc.setDrawColor(220, 230, 220);
         doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
@@ -786,25 +804,27 @@ async function exportKitchenPDF() {
         doc.setFontSize(10);
         doc.setTextColor(30, 92, 60);
         doc.setFont("helvetica", "bold");
-        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, pageWidth - rightMargin - 50, yOffset);
-        yOffset += 10;
+        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, pageWidth - rightMargin - 55, yOffset);
+        yOffset += 12;
         
+        // Separator between orders (except last)
         if (i < filtered.length - 1) {
             checkPage(15);
             doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.5);
+            doc.setLineWidth(0.3);
             doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
             yOffset += 8;
         }
     }
     
+    // ========== FOOTER ON ALL PAGES ==========
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
         doc.setFont("helvetica", "italic");
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 20, 285);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 25, 285);
         doc.text("Kitchen Orders Report - Storekeeper Dashboard", leftMargin, 285);
         doc.setDrawColor(220, 220, 220);
         doc.line(leftMargin, 280, pageWidth - rightMargin, 280);
@@ -814,7 +834,7 @@ async function exportKitchenPDF() {
     showToast(`📄 PDF Exported as "${filename}"`);
 }
 
-// IMPROVED ARCHIVE PDF
+// ============ IMPROVED ARCHIVE PDF ============
 async function archiveAsPDFAndClear() {
     if (allApprovedOrders.length === 0) {
         showToast("No orders to archive");
@@ -833,7 +853,7 @@ async function archiveAsPDFAndClear() {
     const today = new Date().toISOString().slice(0, 10);
     const filename = `${safeName}_orders_${today}.pdf`;
     
-    let yOffset = 20;
+    let yOffset = 25;
     const leftMargin = 15;
     const rightMargin = 15;
     const pageWidth = 210;
@@ -841,19 +861,20 @@ async function archiveAsPDFAndClear() {
     function checkPage(needed) {
         if (yOffset + needed > 280) {
             doc.addPage();
-            yOffset = 20;
+            yOffset = 25;
             return true;
         }
         return false;
     }
     
+    // Header
     doc.setFontSize(24);
     doc.setTextColor(30, 92, 60);
     doc.setFont("helvetica", "bold");
     doc.text("📦 KITCHEN ORDERS ARCHIVE", leftMargin, yOffset);
     yOffset += 12;
     
-    doc.setDrawColor(200, 220, 200);
+    doc.setDrawColor(30, 92, 60);
     doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
     yOffset += 8;
     
@@ -876,17 +897,18 @@ async function archiveAsPDFAndClear() {
             grandTotal += qty * (item.price || 0);
         });
     });
-    doc.text(`Total Items: ${totalItems}`, leftMargin, yOffset);
+    doc.text(`Total Items: ${totalItems.toFixed(1)}`, leftMargin, yOffset);
     yOffset += 6;
     doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, leftMargin, yOffset);
     yOffset += 12;
     
+    // Process orders
     for (let i = 0; i < allApprovedOrders.length; i++) {
         const order = allApprovedOrders[i];
         const approvedItems = order.items.filter(item => item.status === "approved");
         if (approvedItems.length === 0) continue;
         
-        checkPage(40);
+        checkPage(50);
         
         doc.setFillColor(245, 250, 245);
         doc.rect(leftMargin, yOffset - 3, 180, 10, 'F');
@@ -898,8 +920,10 @@ async function archiveAsPDFAndClear() {
         
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Kitchen: ${order.section || "N/A"}  |  Chef: ${order.chefName || "N/A"}  |  Date: ${formatDateOnly(order.submittedAt)}`, leftMargin, yOffset);
+        doc.setFont("helvetica", "italic");
+        doc.text(`Kitchen: ${order.section || "N/A"}`, leftMargin, yOffset);
+        doc.text(`Chef: ${order.chefName || "N/A"}`, leftMargin + 70, yOffset);
+        doc.text(`Date: ${formatDateOnly(order.submittedAt)}`, leftMargin + 130, yOffset);
         yOffset += 8;
         
         const tableData = [];
@@ -912,7 +936,7 @@ async function archiveAsPDFAndClear() {
             orderTotal += total;
             tableData.push([
                 item.code || "-",
-                (item.name || "-").length > 30 ? item.name.substring(0, 27) + "..." : item.name || "-",
+                (item.name || "-").length > 35 ? item.name.substring(0, 32) + "..." : item.name || "-",
                 qty.toString(),
                 item.unit || "-",
                 price.toFixed(2),
@@ -926,17 +950,18 @@ async function archiveAsPDFAndClear() {
             head: [["Code", "Item", "Qty", "Unit", "Price (EGP)", "Total (EGP)", "Approved By"]],
             body: tableData,
             theme: 'striped',
-            styles: { fontSize: 8, cellPadding: 3 },
+            styles: { fontSize: 8, cellPadding: 4 },
             headStyles: { fillColor: [30, 92, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [245, 250, 245] },
             margin: { left: leftMargin, right: rightMargin },
             columnStyles: {
-                0: { cellWidth: 20 },
-                1: { cellWidth: 55 },
-                2: { cellWidth: 15, halign: 'center' },
+                0: { cellWidth: 18, halign: 'center' },
+                1: { cellWidth: 52 },
+                2: { cellWidth: 12, halign: 'center' },
                 3: { cellWidth: 15, halign: 'center' },
                 4: { cellWidth: 20, halign: 'right' },
                 5: { cellWidth: 22, halign: 'right' },
-                6: { cellWidth: 25 }
+                6: { cellWidth: 22, halign: 'center' }
             }
         });
         
@@ -946,13 +971,13 @@ async function archiveAsPDFAndClear() {
         doc.setFontSize(10);
         doc.setTextColor(30, 92, 60);
         doc.setFont("helvetica", "bold");
-        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, pageWidth - rightMargin - 50, yOffset);
+        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, pageWidth - rightMargin - 55, yOffset);
         yOffset += 12;
         
         if (i < allApprovedOrders.length - 1) {
             checkPage(10);
             doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.5);
+            doc.setLineWidth(0.3);
             doc.line(leftMargin, yOffset, pageWidth - rightMargin, yOffset);
             yOffset += 8;
         }
@@ -964,7 +989,7 @@ async function archiveAsPDFAndClear() {
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
         doc.setFont("helvetica", "italic");
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 20, 285);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - rightMargin - 25, 285);
         doc.text("Kitchen Orders Archive - Storekeeper Dashboard", leftMargin, 285);
         doc.setDrawColor(220, 220, 220);
         doc.line(leftMargin, 280, pageWidth - rightMargin, 280);
