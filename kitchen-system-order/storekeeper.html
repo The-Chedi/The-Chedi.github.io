@@ -343,7 +343,7 @@ body{
     z-index:1000;
 }
 
-/* LOGIN MODAL */
+/* ENHANCED LOGIN MODAL - Beautiful styling */
 .modal{
     display:flex;
     position:fixed;
@@ -427,6 +427,12 @@ body{
     width:100%;
     font-size:1rem;
     margin-bottom:12px;
+    transition:transform 0.15s, box-shadow 0.15s;
+}
+
+.modal-content button:first-of-type:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 18px rgba(0,0,0,0.15);
 }
 
 .error-msg{
@@ -443,15 +449,36 @@ body{
     border:1px solid #e2e8f0 !important;
 }
 
+.close-modal:hover{
+    background:#e9ecef !important;
+    transform:translateY(-1px) !important;
+}
+
 @media(max-width:768px){
+
+    .stats-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
     .filters{
         flex-direction:column;
         align-items:stretch;
     }
+
+    .filters input,
+    .filters button{
+        width:100%;
+    }
+
     .export-buttons{
         margin-left:0;
         width:100%;
     }
+
+    .export-buttons button{
+        flex:1;
+    }
+
     .data-table th,
     .data-table td{
         font-size:11px;
@@ -464,30 +491,47 @@ body{
 
 <body>
 
-<!-- PASSWORD MODAL -->
+<!-- ENHANCED PASSWORD MODAL -->
 <div id="passwordModal" class="modal">
     <div class="modal-content">
         <div style="font-size:3rem; margin-bottom:8px;">🔐</div>
         <h2>Storekeeper Portal</h2>
         <p>Authorized access only</p>
-        <input type="password" id="passwordInput" placeholder="Enter secure password" onkeypress="if(event.key==='Enter') checkPassword()">
+
+        <input type="password"
+        id="passwordInput"
+        placeholder="Enter secure password"
+        onkeypress="if(event.key==='Enter') checkPassword()">
+
         <button onclick="checkPassword()">→ Access Dashboard</button>
+
         <div id="passwordError" class="error-msg"></div>
-        <button class="close-modal" onclick="window.location.href='index.html'">← Return</button>
+
+        <button class="close-modal" onclick="goBack()">
+        ← Return to Previous Page
+        </button>
     </div>
 </div>
 
-<!-- MAIN CONTENT -->
+<!-- MAIN -->
 <div id="mainContent" style="display:none;">
+
     <div class="header">
         <div class="header-content">
-            <div class="logo">📦 <span>Storekeeper | Approved Orders</span></div>
+            <div class="logo">
+                📦
+                <span>Storekeeper | Approved Orders</span>
+            </div>
             <div class="header-buttons">
                 <button class="btn-header archive-btn" onclick="downloadArchiveAndClear()">
-                📥 Download Archive & Clear
+                📥 Archive & Clear
                 </button>
-                <button class="refresh-btn" onclick="manualRefresh()">🔄</button>
-                <button class="btn-header" onclick="window.print()">🖨️ Print</button>
+                <button class="refresh-btn" onclick="manualRefresh()">
+                🔄
+                </button>
+                <button class="btn-header" onclick="window.print()">
+                🖨️ Print
+                </button>
             </div>
         </div>
     </div>
@@ -511,15 +555,23 @@ let filterState = {
     dateTo:""
 };
 
-/* PASSWORD CHECK */
+/* GO BACK FUNCTION - Works correctly */
+function goBack() {
+    window.history.back();
+}
+
+/* PASSWORD CHECK - Enhanced */
 function checkPassword(){
-    if(document.getElementById("passwordInput").value === STOREKEEPER_PASSWORD){
+    const passwordInput = document.getElementById("passwordInput");
+    if(passwordInput.value === STOREKEEPER_PASSWORD){
         document.getElementById("passwordModal").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
         startRealtimeListener();
         showToast("✅ Login successful");
     }else{
         document.getElementById("passwordError").innerHTML = "Access denied • Incorrect password";
+        passwordInput.value = '';
+        passwordInput.focus();
     }
 }
 
@@ -529,7 +581,7 @@ function manualRefresh(){
     showToast("🔄 Refreshing...");
 }
 
-/* DATE FORMAT */
+/* DATE */
 function formatDate(dateValue){
     if(!dateValue) return "N/A";
     let d;
@@ -549,14 +601,15 @@ function formatDate(dateValue){
     });
 }
 
-/* REALTIME LISTENER */
+/* REALTIME */
 function startRealtimeListener(){
     db.collection("kitchen_requests")
     .onSnapshot(snapshot => {
         allApprovedOrders = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            if(data.items && data.items.some(item => item.status === "approved") && !data.archived) {
+            if(data.items &&
+            data.items.some(item => item.status === "approved") && !data.archived){
                 allApprovedOrders.push({
                     id:doc.id,
                     ...data
@@ -565,16 +618,20 @@ function startRealtimeListener(){
         });
         renderTabs();
         renderCurrentKitchen();
+    }, (error) => {
+        console.error("Firestore error:", error);
+        showToast("⚠️ Firebase connection issue. Check console.");
     });
 }
 
-/* LOAD ONCE */
+/* LOAD */
 async function loadApprovedOrdersOnce(){
     const snapshot = await db.collection("kitchen_requests").get();
     allApprovedOrders = [];
     snapshot.forEach(doc => {
         const data = doc.data();
-        if(data.items && data.items.some(item => item.status === "approved") && !data.archived) {
+        if(data.items &&
+        data.items.some(item => item.status === "approved") && !data.archived){
             allApprovedOrders.push({
                 id:doc.id,
                 ...data
@@ -585,7 +642,7 @@ async function loadApprovedOrdersOnce(){
     renderCurrentKitchen();
 }
 
-/* RENDER TABS */
+/* TABS */
 function renderTabs(){
     const kitchens = [
         "all",
@@ -612,13 +669,15 @@ function renderTabs(){
     });
 }
 
-/* RENDER PAGE */
+/* PAGE */
 function renderCurrentKitchen(){
     let orders;
     if(currentKitchen === "all"){
         orders = allApprovedOrders;
     }else{
-        orders = allApprovedOrders.filter(o => o.section === currentKitchen);
+        orders = allApprovedOrders.filter(
+        o => o.section === currentKitchen
+        );
     }
     renderKitchenPage(orders);
 }
@@ -628,14 +687,27 @@ function renderKitchenPage(orders){
     container.innerHTML = `
     <div class="container">
         <div class="card">
-            <h3>📋 Approved Orders (Active)</h3>
+            <h3>
+            📋 Approved Orders (${orders.length} active)
+            </h3>
             <div class="filters">
-                <input type="text" id="searchInput" placeholder="Search by request or item..." oninput="saveFiltersAndRender()">
-                <input type="date" id="dateFrom" onchange="saveFiltersAndRender()">
-                <input type="date" id="dateTo" onchange="saveFiltersAndRender()">
+                <input type="text"
+                id="searchInput"
+                placeholder="Search..."
+                oninput="saveFiltersAndRender()">
+                <input type="date"
+                id="dateFrom"
+                onchange="saveFiltersAndRender()">
+                <input type="date"
+                id="dateTo"
+                onchange="saveFiltersAndRender()">
                 <div class="export-buttons">
-                    <button onclick="exportKitchenPDF()">📄 Export PDF</button>
-                    <button onclick="exportCSV()">📊 Export CSV</button>
+                    <button onclick="exportKitchenPDF()">
+                    📄 Export PDF
+                    </button>
+                    <button onclick="exportCSV()">
+                    📊 Export CSV
+                    </button>
                 </div>
             </div>
             <div id="ordersList"></div>
@@ -645,7 +717,7 @@ function renderKitchenPage(orders){
     displayOrders();
 }
 
-/* FILTERS */
+/* FILTER */
 function saveFiltersAndRender(){
     filterState.search = document.getElementById("searchInput")?.value || "";
     filterState.dateFrom = document.getElementById("dateFrom")?.value || "";
@@ -656,47 +728,68 @@ function saveFiltersAndRender(){
 function getFilteredOrders(){
     let filtered = [...allApprovedOrders];
     if(currentKitchen !== "all"){
-        filtered = filtered.filter(o => o.section === currentKitchen);
+        filtered = filtered.filter(
+        o => o.section === currentKitchen
+        );
     }
     if(filterState.search){
         const search = filterState.search.toLowerCase();
         filtered = filtered.filter(order => {
-            if(order.requestId?.toLowerCase().includes(search)) return true;
-            if(order.id?.toLowerCase().includes(search)) return true;
-            return order.items.some(item => item.name?.toLowerCase().includes(search));
+            if(order.requestId?.toLowerCase().includes(search))
+            return true;
+            return order.items.some(item =>
+                item.name?.toLowerCase().includes(search)
+            );
         });
     }
     return filtered;
 }
 
-/* DISPLAY ORDERS */
+/* DISPLAY */
 function displayOrders(){
     const container = document.getElementById("ordersList");
     let filtered = getFilteredOrders();
     if(filtered.length === 0){
-        container.innerHTML = '<div class="empty-state">📭 No active approved orders. Archive or wait for new orders.</div>';
+        container.innerHTML = '<div class="empty-state">📭 No approved orders</div>';
         return;
     }
     let html = "";
     filtered.forEach(order => {
-        const approvedItems = order.items.filter(item => item.status === "approved");
+        const approvedItems = order.items.filter(item =>
+        item.status === "approved");
         let total = 0;
         html += `
         <div class="order-group">
             <div class="order-header">
                 <div>
-                    <span class="order-id">📄 ${order.requestId || order.id}</span>
-                    <span class="kitchen-tag">${order.section || ""}</span>
+                    <span class="order-id">
+                    📄 ${order.requestId || order.id}
+                    </span>
+                    <span class="kitchen-tag">
+                    ${order.section || ""}
+                    </span>
                 </div>
                 <div class="order-meta">
-                    <span>👨‍🍳 ${order.chefName || ""}</span>
-                    <span>📅 ${formatDate(order.submittedAt)}</span>
+                    <span>
+                    👨‍🍳 ${order.chefName || ""}
+                    </span>
+                    <span>
+                    📅 ${formatDate(order.submittedAt)}
+                    </span>
                 </div>
             </div>
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
-                        <tr><th>Code</th><th>Item</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th>Approved By</th></tr>
+                        <tr>
+                            <th>Code</th>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Unit</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th>Approved By</th>
+                        </tr>
                     </thead>
                     <tbody>
         `;
@@ -705,37 +798,58 @@ function displayOrders(){
             const price = item.price || 0;
             const rowTotal = qty * price;
             total += rowTotal;
-            html += `<tr><td>${escapeHtml(item.code || "")}</td><td>${escapeHtml(item.name)}</td><td>${qty}</td><td>${item.unit || ""}</td><td>${price.toFixed(2)}</td><td>${rowTotal.toFixed(2)}</td><td><span class="badge badge-approved">✔ ${item.approvedBy || ""}</span></td></tr>`;
+            html += `
+            <tr>
+                <td>${item.code || ""}</td>
+                <td>${escapeHtml(item.name)}</td>
+                <td>${qty}</td>
+                <td>${item.unit || ""}</td>
+                <td>${price.toFixed(2)}</td>
+                <td>${rowTotal.toFixed(2)}</td>
+                <td>
+                    <span class="badge badge-approved">
+                    ✔ ${item.approvedBy || ""}
+                    </span>
+                </td>
+            </tr>
+            `;
         });
-        html += `</tbody></table></div>
-        <div style="padding:10px 15px; background:#f0fdf4; text-align:right;"><span class="order-total">💰 Order Total: ${total.toFixed(2)} EGP</span></div>
-        </div>`;
+        html += `
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding:10px 15px; background:#f0fdf4; text-align:right;">
+                <span class="order-total">
+                💰 Order Total: ${total.toFixed(2)} EGP
+                </span>
+            </div>
+        </div>
+        `;
     });
     container.innerHTML = html;
 }
 
-/* EASY ARCHIVE - DOWNLOAD JSON FILE & CLEAR DATABASE */
+/* ARCHIVE FUNCTION - Download JSON & Clear Database */
 async function downloadArchiveAndClear() {
     if(allApprovedOrders.length === 0){
-        showToast("No orders to archive.");
+        showToast("No orders to archive");
         return;
     }
     
-    // Show confirmation dialog
-    const confirmArchive = confirm(`📦 Archive ${allApprovedOrders.length} orders?\n\nThis will:\n1. Download a JSON archive file to your computer\n2. Clear all orders from the database\n3. Remove them from this view\n\nYou can save the JSON file to Google Drive or any cloud storage.\n\nProceed?`);
+    const confirmArchive = confirm(`📦 Archive ${allApprovedOrders.length} orders?\n\nThis will:\n1. Download a JSON backup file\n2. Clear all orders from database\n3. Remove them from this view\n\nProceed?`);
     
     if(!confirmArchive) return;
     
     showToast("📦 Preparing archive...");
     
-    // Prepare archive data with all order details
+    // Prepare archive data
     const archiveData = {
         archiveInfo: {
             archivedDate: new Date().toISOString(),
             archivedDateReadable: new Date().toLocaleString(),
             totalOrdersArchived: allApprovedOrders.length,
             totalItemsArchived: allApprovedOrders.reduce((sum, order) => 
-                sum + order.items.filter(item => item.status === "approved").length, 0
+                sum + (order.items?.filter(item => item.status === "approved").length || 0), 0
             )
         },
         orders: allApprovedOrders.map(order => ({
@@ -745,7 +859,7 @@ async function downloadArchiveAndClear() {
             chefName: order.chefName,
             submittedAt: order.submittedAt,
             submittedAtReadable: formatDate(order.submittedAt),
-            items: order.items.filter(item => item.status === "approved").map(item => ({
+            items: order.items?.filter(item => item.status === "approved").map(item => ({
                 code: item.code,
                 name: item.name,
                 originalQty: item.originalQty,
@@ -753,16 +867,12 @@ async function downloadArchiveAndClear() {
                 unit: item.unit,
                 price: item.price,
                 total: (item.approvedQty || item.originalQty || 0) * (item.price || 0),
-                approvedBy: item.approvedBy,
-                status: item.status
-            })),
-            orderTotal: order.items.filter(item => item.status === "approved").reduce((sum, item) => 
-                sum + ((item.approvedQty || item.originalQty || 0) * (item.price || 0)), 0
-            )
+                approvedBy: item.approvedBy
+            }))
         }))
     };
     
-    // Create JSON file and download
+    // Create and download JSON file
     const jsonString = JSON.stringify(archiveData, null, 2);
     const blob = new Blob([jsonString], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
@@ -775,9 +885,9 @@ async function downloadArchiveAndClear() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showToast("✅ Archive downloaded successfully!");
+    showToast("✅ Archive downloaded!");
     
-    // Wait a moment then clear the database
+    // Ask to clear database
     setTimeout(async () => {
         const confirmClear = confirm("Archive saved! Clear all orders from database now?");
         if(confirmClear) {
@@ -805,20 +915,21 @@ async function clearAllOrdersFromDatabase() {
         }
     }
     
-    const message = `✅ Cleared ${successCount} orders from database! ${failCount ? failCount + ' failed' : ''}`;
-    showToast(message);
+    showToast(`✅ Cleared ${successCount} orders from database${failCount ? `, ${failCount} failed` : ''}`);
     
     // Refresh the view
     setTimeout(() => {
         startRealtimeListener();
-        loadApprovedOrdersOnce();
     }, 500);
 }
 
 /* PDF EXPORT */
 async function exportKitchenPDF(){
     let filtered = getFilteredOrders();
-    filtered = filtered.filter(order => order.items.some(item => item.status === "approved"));
+    filtered = filtered.filter(order =>
+        order.items.some(item =>
+        item.status === "approved")
+    );
     if(filtered.length === 0){
         showToast("No data to export");
         return;
@@ -834,7 +945,8 @@ async function exportKitchenPDF(){
     currentY += 10;
     let grandTotal = 0;
     filtered.forEach((order,index) => {
-        const approvedItems = order.items.filter(item => item.status === "approved");
+        const approvedItems = order.items.filter(item =>
+        item.status === "approved");
         if(approvedItems.length === 0) return;
         doc.setFontSize(12);
         doc.text(`Request: ${order.requestId || order.id}`, 14, currentY);
@@ -853,7 +965,15 @@ async function exportKitchenPDF(){
             const total = qty * price;
             orderTotal += total;
             grandTotal += total;
-            rows.push([item.code || "", item.name || "", qty, item.unit || "", price.toFixed(2), total.toFixed(2), item.approvedBy || ""]);
+            rows.push([
+                item.code || "",
+                item.name || "",
+                qty,
+                item.unit || "",
+                price.toFixed(2),
+                total.toFixed(2),
+                item.approvedBy || ""
+            ]);
         });
         doc.autoTable({
             startY: currentY + 4,
@@ -877,7 +997,7 @@ async function exportKitchenPDF(){
     showToast("📄 PDF Exported");
 }
 
-/* CSV EXPORT */
+/* CSV */
 function exportCSV(){
     let filtered = getFilteredOrders();
     let csv = "Request ID,Kitchen,Chef,Item,Qty,Price,Total\n";
@@ -903,9 +1023,15 @@ function downloadCSV(csvText,filename){
     link.click();
 }
 
+/* HELPERS */
 function escapeHtml(str){
     if(!str) return '';
-    return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+    return str.replace(/[&<>]/g,
+    m => ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;'
+    }[m]));
 }
 
 function showToast(msg){
@@ -916,10 +1042,21 @@ function showToast(msg){
     setTimeout(() => toast.remove(), 2500);
 }
 
+// Enter key support for login
+document.addEventListener('DOMContentLoaded', () => {
+    const passwordInput = document.getElementById('passwordInput');
+    if(passwordInput) {
+        passwordInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') checkPassword();
+        });
+    }
+});
+
 window.onload = () => {
     document.getElementById("passwordModal").style.display = "flex";
 };
 
 </script>
+
 </body>
 </html>
