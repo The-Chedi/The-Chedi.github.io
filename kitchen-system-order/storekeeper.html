@@ -343,7 +343,7 @@ body{
     z-index:1000;
 }
 
-/* ENHANCED LOGIN MODAL - Beautiful styling */
+/* ENHANCED LOGIN MODAL */
 .modal{
     display:flex;
     position:fixed;
@@ -443,15 +443,17 @@ body{
     font-weight:600;
 }
 
-.close-modal{
-    background:#f1f3f5 !important;
-    color:#2c3e2c !important;
-    border:1px solid #e2e8f0 !important;
+/* Return button - same style as access dashboard button */
+.return-btn{
+    background:#95a5a6 !important;
+    margin-top:10px;
+    transition:transform 0.15s, box-shadow 0.15s !important;
 }
 
-.close-modal:hover{
-    background:#e9ecef !important;
-    transform:translateY(-1px) !important;
+.return-btn:hover{
+    background:#7f8c8d !important;
+    transform:translateY(-2px) !important;
+    box-shadow:0 8px 18px rgba(0,0,0,0.15) !important;
 }
 
 @media(max-width:768px){
@@ -507,8 +509,8 @@ body{
 
         <div id="passwordError" class="error-msg"></div>
 
-        <button class="close-modal" onclick="goBack()">
-        ← Return to Previous Page
+        <button class="close-modal return-btn" onclick="returnToDashboard()">
+        ← Return to Dashboard
         </button>
     </div>
 </div>
@@ -523,8 +525,8 @@ body{
                 <span>Storekeeper | Approved Orders</span>
             </div>
             <div class="header-buttons">
-                <button class="btn-header archive-btn" onclick="downloadArchiveAndClear()">
-                📥 Archive & Clear
+                <button class="btn-header archive-btn" onclick="archiveAsPDFAndClear()">
+                📥 Archive as PDF & Clear
                 </button>
                 <button class="refresh-btn" onclick="manualRefresh()">
                 🔄
@@ -541,6 +543,7 @@ body{
     </div>
 
     <div id="kitchenPagesContainer"></div>
+
 </div>
 
 <script>
@@ -555,12 +558,16 @@ let filterState = {
     dateTo:""
 };
 
-/* GO BACK FUNCTION - Works correctly */
-function goBack() {
-    window.history.back();
+/* RETURN TO DASHBOARD - Same style button, stays on same page */
+function returnToDashboard() {
+    // This keeps the user on the same page/sheet
+    // Just refresh or stay - no navigation away
+    document.getElementById("passwordModal").style.display = "none";
+    // Optional: reload data or just close modal
+    showToast("Returning to dashboard");
 }
 
-/* PASSWORD CHECK - Enhanced */
+/* PASSWORD CHECK */
 function checkPassword(){
     const passwordInput = document.getElementById("passwordInput");
     if(passwordInput.value === STOREKEEPER_PASSWORD){
@@ -618,9 +625,6 @@ function startRealtimeListener(){
         });
         renderTabs();
         renderCurrentKitchen();
-    }, (error) => {
-        console.error("Firestore error:", error);
-        showToast("⚠️ Firebase connection issue. Check console.");
     });
 }
 
@@ -829,71 +833,157 @@ function displayOrders(){
     container.innerHTML = html;
 }
 
-/* ARCHIVE FUNCTION - Download JSON & Clear Database */
-async function downloadArchiveAndClear() {
+/* ARCHIVE AS PDF - Creates beautiful PDF and clears database */
+async function archiveAsPDFAndClear() {
     if(allApprovedOrders.length === 0){
         showToast("No orders to archive");
         return;
     }
     
-    const confirmArchive = confirm(`📦 Archive ${allApprovedOrders.length} orders?\n\nThis will:\n1. Download a JSON backup file\n2. Clear all orders from database\n3. Remove them from this view\n\nProceed?`);
+    const confirmArchive = confirm(`📦 Archive ${allApprovedOrders.length} orders as PDF?\n\nThis will:\n1. Create a beautiful PDF archive report\n2. Download the PDF to your computer\n3. Clear all orders from database\n\nProceed?`);
     
     if(!confirmArchive) return;
     
-    showToast("📦 Preparing archive...");
+    showToast("📄 Creating PDF archive...");
     
-    // Prepare archive data
-    const archiveData = {
-        archiveInfo: {
-            archivedDate: new Date().toISOString(),
-            archivedDateReadable: new Date().toLocaleString(),
-            totalOrdersArchived: allApprovedOrders.length,
-            totalItemsArchived: allApprovedOrders.reduce((sum, order) => 
-                sum + (order.items?.filter(item => item.status === "approved").length || 0), 0
-            )
-        },
-        orders: allApprovedOrders.map(order => ({
-            id: order.id,
-            requestId: order.requestId,
-            section: order.section,
-            chefName: order.chefName,
-            submittedAt: order.submittedAt,
-            submittedAtReadable: formatDate(order.submittedAt),
-            items: order.items?.filter(item => item.status === "approved").map(item => ({
-                code: item.code,
-                name: item.name,
-                originalQty: item.originalQty,
-                approvedQty: item.approvedQty,
-                unit: item.unit,
-                price: item.price,
-                total: (item.approvedQty || item.originalQty || 0) * (item.price || 0),
-                approvedBy: item.approvedBy
-            }))
-        }))
-    };
+    // Generate PDF Archive
+    await generateArchivePDF();
     
-    // Create and download JSON file
-    const jsonString = JSON.stringify(archiveData, null, 2);
-    const blob = new Blob([jsonString], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-    a.href = url;
-    a.download = `kitchen_archive_${timestamp}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showToast("✅ Archive downloaded!");
-    
-    // Ask to clear database
+    // Ask to clear database after PDF is created
     setTimeout(async () => {
-        const confirmClear = confirm("Archive saved! Clear all orders from database now?");
+        const confirmClear = confirm("PDF archive created! Clear all orders from database now?");
         if(confirmClear) {
             await clearAllOrdersFromDatabase();
         }
-    }, 500);
+    }, 1000);
+}
+
+/* GENERATE ARCHIVE PDF */
+async function generateArchivePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+    
+    // Add header
+    doc.setFontSize(22);
+    doc.setTextColor(30, 92, 60);
+    doc.text("📦 KITCHEN ORDERS ARCHIVE", 14, 20);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Archive Date: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Total Orders: ${allApprovedOrders.length}`, 14, 37);
+    
+    // Calculate total items and value
+    let totalItems = 0;
+    let grandTotal = 0;
+    
+    allApprovedOrders.forEach(order => {
+        const approvedItems = order.items.filter(item => item.status === "approved");
+        totalItems += approvedItems.length;
+        approvedItems.forEach(item => {
+            const qty = item.approvedQty || item.originalQty || 0;
+            const price = item.price || 0;
+            grandTotal += qty * price;
+        });
+    });
+    
+    doc.text(`Total Items: ${totalItems}`, 14, 44);
+    doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, 14, 51);
+    
+    // Add line separator
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 58, 200, 58);
+    
+    let currentY = 65;
+    
+    // Process each order
+    for(let i = 0; i < allApprovedOrders.length; i++) {
+        const order = allApprovedOrders[i];
+        const approvedItems = order.items.filter(item => item.status === "approved");
+        
+        if(approvedItems.length === 0) continue;
+        
+        // Check if we need a new page
+        if(currentY > 250) {
+            doc.addPage();
+            currentY = 20;
+        }
+        
+        // Order header
+        doc.setFontSize(14);
+        doc.setTextColor(30, 92, 60);
+        doc.text(`Order #${i+1}: ${order.requestId || order.id}`, 14, currentY);
+        currentY += 7;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Kitchen: ${order.section || "N/A"}`, 14, currentY);
+        currentY += 5;
+        doc.text(`Chef: ${order.chefName || "N/A"}`, 14, currentY);
+        currentY += 5;
+        doc.text(`Date: ${formatDate(order.submittedAt)}`, 14, currentY);
+        currentY += 8;
+        
+        // Create items table
+        const rows = [];
+        let orderTotal = 0;
+        
+        approvedItems.forEach(item => {
+            const qty = item.approvedQty || item.originalQty || 0;
+            const price = item.price || 0;
+            const total = qty * price;
+            orderTotal += total;
+            rows.push([
+                item.code || "-",
+                item.name || "-",
+                qty.toString(),
+                item.unit || "-",
+                price.toFixed(2),
+                total.toFixed(2),
+                item.approvedBy || "-"
+            ]);
+        });
+        
+        doc.autoTable({
+            startY: currentY,
+            head: [["Code", "Item", "Qty", "Unit", "Price", "Total", "Approved By"]],
+            body: rows,
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [30, 92, 60], textColor: [255, 255, 255] },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            margin: { left: 14, right: 14 }
+        });
+        
+        currentY = doc.lastAutoTable.finalY + 5;
+        
+        // Order total
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, 14, currentY);
+        currentY += 10;
+        
+        // Add separator line between orders
+        if(i < allApprovedOrders.length - 1) {
+            doc.setDrawColor(200, 200, 200);
+            doc.line(14, currentY, 200, currentY);
+            currentY += 8;
+        }
+    }
+    
+    // Add footer with summary on last page
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i} of ${pageCount}`, 180, 285);
+        doc.text("Kitchen Orders Archive - Storekeeper Dashboard", 14, 285);
+    }
+    
+    // Save PDF
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    doc.save(`kitchen_archive_${timestamp}.pdf`);
+    showToast("✅ PDF Archive created and downloaded!");
 }
 
 /* CLEAR ALL ORDERS FROM FIRESTORE */
@@ -923,7 +1013,7 @@ async function clearAllOrdersFromDatabase() {
     }, 500);
 }
 
-/* PDF EXPORT */
+/* PDF EXPORT (Regular report) */
 async function exportKitchenPDF(){
     let filtered = getFilteredOrders();
     filtered = filtered.filter(order =>
