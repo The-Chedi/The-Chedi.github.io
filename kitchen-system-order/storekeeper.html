@@ -558,12 +558,21 @@ let filterState = {
     dateTo:""
 };
 
-/* RETURN TO DASHBOARD - Same style button, stays on same page */
+// Helper function to get safe filename from kitchen name
+function getSafeKitchenName(kitchenName) {
+    if(kitchenName === "all") return "all_kitchens";
+    return kitchenName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
+// Helper function to get current kitchen display name
+function getCurrentKitchenDisplayName() {
+    if(currentKitchen === "all") return "All Kitchens";
+    return currentKitchen;
+}
+
+/* RETURN TO DASHBOARD */
 function returnToDashboard() {
-    // This keeps the user on the same page/sheet
-    // Just refresh or stay - no navigation away
     document.getElementById("passwordModal").style.display = "none";
-    // Optional: reload data or just close modal
     showToast("Returning to dashboard");
 }
 
@@ -663,7 +672,7 @@ function renderTabs(){
     kitchens.forEach(k => {
         const btn = document.createElement("button");
         btn.className = `tab-btn ${currentKitchen === k ? 'active' : ''}`;
-        btn.innerHTML = k;
+        btn.innerHTML = k === "all" ? "📋 All Kitchens" : k;
         btn.onclick = () => {
             currentKitchen = k;
             renderTabs();
@@ -746,7 +755,36 @@ function getFilteredOrders(){
             );
         });
     }
+    // Apply date filters
+    if(filterState.dateFrom){
+        const fromDate = new Date(filterState.dateFrom);
+        fromDate.setHours(0,0,0,0);
+        filtered = filtered.filter(order => {
+            const orderDate = getOrderDate(order);
+            return orderDate >= fromDate;
+        });
+    }
+    if(filterState.dateTo){
+        const toDate = new Date(filterState.dateTo);
+        toDate.setHours(23,59,59,999);
+        filtered = filtered.filter(order => {
+            const orderDate = getOrderDate(order);
+            return orderDate <= toDate;
+        });
+    }
     return filtered;
+}
+
+function getOrderDate(order){
+    if(order.submittedAt){
+        if(typeof order.submittedAt === "string") return new Date(order.submittedAt);
+        if(order.submittedAt.seconds) return new Date(order.submittedAt.seconds * 1000);
+    }
+    if(order.timestamp){
+        if(typeof order.timestamp === "number") return new Date(order.timestamp);
+        if(order.timestamp.seconds) return new Date(order.timestamp.seconds * 1000);
+    }
+    return new Date(0);
 }
 
 /* DISPLAY */
@@ -805,16 +843,16 @@ function displayOrders(){
             html += `
             <tr>
                 <td>${item.code || ""}</td>
-                <td>${escapeHtml(item.name)}</td>
-                <td>${qty}</td>
-                <td>${item.unit || ""}</td>
-                <td>${price.toFixed(2)}</td>
-                <td>${rowTotal.toFixed(2)}</td>
+                <td>${escapeHtml(item.name)}</div>
+                <td>${qty}</div>
+                <td>${item.unit || ""}</div>
+                <td>${price.toFixed(2)}</div>
+                <td>${rowTotal.toFixed(2)}</div>
                 <td>
                     <span class="badge badge-approved">
                     ✔ ${item.approvedBy || ""}
                     </span>
-                </td>
+                </div>
             </tr>
             `;
         });
@@ -846,7 +884,7 @@ async function archiveAsPDFAndClear() {
     
     showToast("📄 Creating PDF archive...");
     
-    // Generate PDF Archive
+    // Generate PDF Archive with proper naming
     await generateArchivePDF();
     
     // Ask to clear database after PDF is created
@@ -858,20 +896,27 @@ async function archiveAsPDFAndClear() {
     }, 1000);
 }
 
-/* GENERATE ARCHIVE PDF */
+/* GENERATE ARCHIVE PDF with simplified naming */
 async function generateArchivePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p", "mm", "a4");
+    const kitchenDisplay = getCurrentKitchenDisplayName();
+    const kitchenSafe = getSafeKitchenName(currentKitchen);
+    const today = new Date().toISOString().slice(0,10);
+    
+    // Simple filename: kitchen_name_orders_date.pdf
+    let filename = `${kitchenSafe}_orders_${today}.pdf`;
     
     // Add header
     doc.setFontSize(22);
     doc.setTextColor(30, 92, 60);
-    doc.text("📦 KITCHEN ORDERS ARCHIVE", 14, 20);
+    doc.text(`📦 KITCHEN ORDERS ARCHIVE`, 14, 20);
     
     doc.setFontSize(11);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Archive Date: ${new Date().toLocaleString()}`, 14, 30);
-    doc.text(`Total Orders: ${allApprovedOrders.length}`, 14, 37);
+    doc.text(`Kitchen: ${kitchenDisplay}`, 14, 30);
+    doc.text(`Archive Date: ${new Date().toLocaleString()}`, 14, 37);
+    doc.text(`Total Orders: ${allApprovedOrders.length}`, 14, 44);
     
     // Calculate total items and value
     let totalItems = 0;
@@ -887,14 +932,19 @@ async function generateArchivePDF() {
         });
     });
     
-    doc.text(`Total Items: ${totalItems}`, 14, 44);
-    doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, 14, 51);
+    doc.text(`Total Items: ${totalItems}`, 14, 51);
+    doc.text(`Grand Total: ${grandTotal.toFixed(2)} EGP`, 14, 58);
+    
+    // Add date range if applied (only in content, not in filename)
+    const fromDate = filterState.dateFrom || "All";
+    const toDate = filterState.dateTo || "All";
+    doc.text(`Date Range: ${fromDate} to ${toDate}`, 14, 65);
     
     // Add line separator
     doc.setDrawColor(200, 200, 200);
-    doc.line(14, 58, 200, 58);
+    doc.line(14, 72, 200, 72);
     
-    let currentY = 65;
+    let currentY = 79;
     
     // Process each order
     for(let i = 0; i < allApprovedOrders.length; i++) {
@@ -910,7 +960,7 @@ async function generateArchivePDF() {
         }
         
         // Order header
-        doc.setFontSize(14);
+        doc.setFontSize(13);
         doc.setTextColor(30, 92, 60);
         doc.text(`Order #${i+1}: ${order.requestId || order.id}`, 14, currentY);
         currentY += 7;
@@ -980,10 +1030,149 @@ async function generateArchivePDF() {
         doc.text("Kitchen Orders Archive - Storekeeper Dashboard", 14, 285);
     }
     
-    // Save PDF
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    doc.save(`kitchen_archive_${timestamp}.pdf`);
-    showToast("✅ PDF Archive created and downloaded!");
+    // Save PDF with simple name
+    doc.save(filename);
+    showToast(`✅ PDF Archive saved as "${filename}"`);
+}
+
+/* PDF EXPORT (Regular report) with simplified naming */
+async function exportKitchenPDF(){
+    let filtered = getFilteredOrders();
+    filtered = filtered.filter(order =>
+        order.items.some(item =>
+        item.status === "approved")
+    );
+    if(filtered.length === 0){
+        showToast("No data to export");
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p","mm","a4");
+    let currentY = 20;
+    
+    // Simple filename: kitchen_name_report_date.pdf
+    const kitchenSafe = getSafeKitchenName(currentKitchen);
+    const today = new Date().toISOString().slice(0,10);
+    let filename = `${kitchenSafe}_report_${today}.pdf`;
+    
+    doc.setFontSize(18);
+    doc.setTextColor(30, 92, 60);
+    doc.text("Kitchen Approved Orders Report", 14, currentY);
+    currentY += 10;
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Kitchen: ${getCurrentKitchenDisplayName()}`, 14, currentY);
+    currentY += 7;
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, currentY);
+    currentY += 7;
+    
+    if(filterState.dateFrom || filterState.dateTo) {
+        const fromDate = filterState.dateFrom || "All";
+        const toDate = filterState.dateTo || "All";
+        doc.text(`Date Range: ${fromDate} to ${toDate}`, 14, currentY);
+        currentY += 7;
+    }
+    
+    currentY += 5;
+    
+    let grandTotal = 0;
+    filtered.forEach((order,index) => {
+        const approvedItems = order.items.filter(item =>
+        item.status === "approved");
+        if(approvedItems.length === 0) return;
+        
+        if(currentY > 260) {
+            doc.addPage();
+            currentY = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setTextColor(30, 92, 60);
+        doc.text(`Request: ${order.requestId || order.id}`, 14, currentY);
+        currentY += 6;
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Kitchen: ${order.section || ""}`, 14, currentY);
+        currentY += 5;
+        doc.text(`Chef: ${order.chefName || ""}`, 14, currentY);
+        currentY += 5;
+        doc.text(`Date: ${formatDate(order.submittedAt)}`, 14, currentY);
+        currentY += 4;
+        
+        const rows = [];
+        let orderTotal = 0;
+        approvedItems.forEach(item => {
+            const qty = item.approvedQty || item.originalQty || 0;
+            const price = item.price || 0;
+            const total = qty * price;
+            orderTotal += total;
+            grandTotal += total;
+            rows.push([
+                item.code || "",
+                item.name || "",
+                qty,
+                item.unit || "",
+                price.toFixed(2),
+                total.toFixed(2),
+                item.approvedBy || ""
+            ]);
+        });
+        
+        doc.autoTable({
+            startY: currentY + 4,
+            head:[["Code","Item","Qty","Unit","Price","Total","Approved By"]],
+            body: rows,
+            styles:{ fontSize:8 },
+            headStyles:{ fillColor:[30,92,60] },
+            margin:{ left:14, right:14 }
+        });
+        currentY = doc.lastAutoTable.finalY + 8;
+        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, 14, currentY);
+        currentY += 12;
+        if(currentY > 260 && index < filtered.length - 1){
+            doc.addPage();
+            currentY = 20;
+        }
+    });
+    
+    doc.setFontSize(14);
+    doc.setTextColor(30, 92, 60);
+    doc.text(`GRAND TOTAL: ${grandTotal.toFixed(2)} EGP`, 14, currentY);
+    
+    doc.save(filename);
+    showToast(`📄 PDF Exported as "${filename}"`);
+}
+
+/* CSV with simplified naming */
+function exportCSV(){
+    let filtered = getFilteredOrders();
+    let csv = "Request ID,Kitchen,Chef,Item,Qty,Price,Total\n";
+    filtered.forEach(order => {
+        order.items.forEach(item => {
+            if(item.status === "approved"){
+                const qty = item.approvedQty || item.originalQty || 0;
+                const price = item.price || 0;
+                const total = qty * price;
+                csv += `"${order.requestId}","${order.section}","${order.chefName}","${item.name}",${qty},${price},${total}\n`;
+            }
+        });
+    });
+    
+    const kitchenSafe = getSafeKitchenName(currentKitchen);
+    const today = new Date().toISOString().slice(0,10);
+    let filename = `${kitchenSafe}_report_${today}.csv`;
+    
+    downloadCSV(csv, filename);
+    showToast(`📊 CSV Exported as "${filename}"`);
+}
+
+function downloadCSV(csvText,filename){
+    const blob = new Blob(["\uFEFF" + csvText],{ type:"text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
 }
 
 /* CLEAR ALL ORDERS FROM FIRESTORE */
@@ -1011,106 +1200,6 @@ async function clearAllOrdersFromDatabase() {
     setTimeout(() => {
         startRealtimeListener();
     }, 500);
-}
-
-/* PDF EXPORT (Regular report) */
-async function exportKitchenPDF(){
-    let filtered = getFilteredOrders();
-    filtered = filtered.filter(order =>
-        order.items.some(item =>
-        item.status === "approved")
-    );
-    if(filtered.length === 0){
-        showToast("No data to export");
-        return;
-    }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF("p","mm","a4");
-    let currentY = 20;
-    doc.setFontSize(18);
-    doc.text("Kitchen Approved Orders Report", 14, currentY);
-    currentY += 10;
-    doc.setFontSize(11);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, currentY);
-    currentY += 10;
-    let grandTotal = 0;
-    filtered.forEach((order,index) => {
-        const approvedItems = order.items.filter(item =>
-        item.status === "approved");
-        if(approvedItems.length === 0) return;
-        doc.setFontSize(12);
-        doc.text(`Request: ${order.requestId || order.id}`, 14, currentY);
-        currentY += 6;
-        doc.text(`Kitchen: ${order.section || ""}`, 14, currentY);
-        currentY += 6;
-        doc.text(`Chef: ${order.chefName || ""}`, 14, currentY);
-        currentY += 6;
-        doc.text(`Date: ${formatDate(order.submittedAt)}`, 14, currentY);
-        currentY += 4;
-        const rows = [];
-        let orderTotal = 0;
-        approvedItems.forEach(item => {
-            const qty = item.approvedQty || item.originalQty || 0;
-            const price = item.price || 0;
-            const total = qty * price;
-            orderTotal += total;
-            grandTotal += total;
-            rows.push([
-                item.code || "",
-                item.name || "",
-                qty,
-                item.unit || "",
-                price.toFixed(2),
-                total.toFixed(2),
-                item.approvedBy || ""
-            ]);
-        });
-        doc.autoTable({
-            startY: currentY + 4,
-            head:[["Code","Item","Qty","Unit","Price","Total","Approved By"]],
-            body: rows,
-            styles:{ fontSize:8 },
-            headStyles:{ fillColor:[30,92,60] },
-            margin:{ left:14, right:14 }
-        });
-        currentY = doc.lastAutoTable.finalY + 8;
-        doc.text(`Order Total: ${orderTotal.toFixed(2)} EGP`, 14, currentY);
-        currentY += 12;
-        if(currentY > 260 && index < filtered.length - 1){
-            doc.addPage();
-            currentY = 20;
-        }
-    });
-    doc.setFontSize(14);
-    doc.text(`GRAND TOTAL: ${grandTotal.toFixed(2)} EGP`, 14, currentY);
-    doc.save(`Kitchen_Report_${new Date().toISOString().slice(0,10)}.pdf`);
-    showToast("📄 PDF Exported");
-}
-
-/* CSV */
-function exportCSV(){
-    let filtered = getFilteredOrders();
-    let csv = "Request ID,Kitchen,Chef,Item,Qty,Price,Total\n";
-    filtered.forEach(order => {
-        order.items.forEach(item => {
-            if(item.status === "approved"){
-                const qty = item.approvedQty || item.originalQty || 0;
-                const price = item.price || 0;
-                const total = qty * price;
-                csv += `"${order.requestId}","${order.section}","${order.chefName}","${item.name}",${qty},${price},${total}\n`;
-            }
-        });
-    });
-    downloadCSV(csv,"approved_orders.csv");
-    showToast("📊 CSV Exported");
-}
-
-function downloadCSV(csvText,filename){
-    const blob = new Blob(["\uFEFF" + csvText],{ type:"text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
 }
 
 /* HELPERS */
