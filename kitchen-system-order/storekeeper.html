@@ -444,9 +444,22 @@ let currentKitchen = "all";
 let allApprovedOrders = [];
 let filterState = { search: "", dateFrom: "", dateTo: "" };
 
+// REPLACE the getSafeKitchenName function with this improved version:
+
 function getSafeKitchenName(kitchenName) {
     if (kitchenName === "all") return "all_kitchens";
-    return kitchenName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    // Remove any special characters, replace spaces with underscores
+    let safe = kitchenName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')  // Remove special characters like / 
+        .replace(/\s+/g, '_')          // Replace spaces with underscores
+        .trim();
+    
+    // Handle empty result
+    if (safe === "") return "kitchen";
+    
+    return safe;
 }
 
 function getCurrentKitchenDisplayName() {
