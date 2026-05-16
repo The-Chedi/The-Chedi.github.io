@@ -266,23 +266,27 @@ body {
 }
 
 .btn-add-missing {
-    background: #2ecc71;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
     color: white;
     border: none;
-    padding: 6px 15px;
-    border-radius: 25px;
+    padding: 8px 18px;
+    border-radius: 30px;
     font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .btn-add-missing:hover {
-    background: #27ae60;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
 .btn-add-missing:disabled {
     background: #95a5a6;
     cursor: not-allowed;
+    transform: none;
 }
 
 .table-wrapper {
@@ -536,7 +540,7 @@ body {
     padding: 30px;
     border-radius: 24px;
     text-align: center;
-    max-width: 550px;
+    max-width: 600px;
     width: 90%;
     max-height: 85vh;
     overflow-y: auto;
@@ -710,13 +714,11 @@ body {
 
 .search-container input {
     width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
+    padding: 12px 15px 12px 40px;
+    border: 2px solid #e0e0e0;
     border-radius: 30px;
     font-size: 14px;
-    text-align: left;
-    padding-left: 40px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
     background-repeat: no-repeat;
     background-position: 15px center;
 }
@@ -727,7 +729,7 @@ body {
 }
 
 .item-list {
-    max-height: 300px;
+    max-height: 350px;
     overflow-y: auto;
     margin: 15px 0;
     border: 1px solid #eee;
@@ -738,7 +740,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
+    padding: 12px 15px;
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
     transition: background 0.2s;
@@ -755,11 +757,13 @@ body {
 .item-list-item .item-code {
     font-size: 0.7rem;
     color: #666;
+    font-family: monospace;
 }
 
 .item-list-item .item-name {
     font-weight: 600;
     font-size: 0.9rem;
+    margin: 3px 0;
 }
 
 .item-list-item .item-details {
@@ -770,12 +774,35 @@ body {
 .item-list-item button {
     background: #2ecc71;
     border: none;
-    padding: 5px 12px;
-    border-radius: 20px;
+    padding: 6px 15px;
+    border-radius: 25px;
     color: white;
     font-weight: 600;
     font-size: 0.7rem;
     cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-list-item button:hover {
+    background: #27ae60;
+    transform: scale(1.02);
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.form-row input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.price-highlight {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #e67e22;
 }
 
 @media (max-width: 768px) {
@@ -831,6 +858,10 @@ body {
         flex-direction: column;
         gap: 5px;
         text-align: center;
+    }
+    .form-row {
+        flex-direction: column;
+        gap: 12px;
     }
 }
 
@@ -897,11 +928,9 @@ body {
 </div>
 
 <script>
-// Admin passwords including Nader
 const ADMIN_PASSWORDS = { "Marco": "M1r50123", "Nady": "Nn639123", "Ahmed": "j1cadm1n", "Nader": "Nader123" };
 const KITCHENS = ["Hot Kitchen", "Cold Kitchen", "Pastry / Bakery", "Butchery", "Beach House", "Nihon Kitchen", "Staff Kitchen"];
 
-// Mapping kitchen names to JSON file paths
 const KITCHEN_JSON_FILES = {
     "Hot Kitchen": "items/hot-kitchen.json",
     "Cold Kitchen": "items/cold-kitchen.json",
@@ -912,26 +941,17 @@ const KITCHEN_JSON_FILES = {
     "Staff Kitchen": "items/staff-kitchen.json"
 };
 
-// Store loaded items per kitchen
 let kitchenItemsCache = {};
-
 let currentAdmin = "";
 let currentKitchen = "all";
 let currentStatus = "pending";
 let allRequests = [];
 let selectedUser = "";
-let unsubscribeListener = null;
 
-function goBackToIndex() {
-    window.location.href = "index.html";
-}
+function goBackToIndex() { window.location.href = "index.html"; }
+function openAnalytics() { window.open("analytics.html", "_blank"); }
+function openRevenue() { window.open("revenue.html", "_blank"); }
 
-function openAnalytics() {
-    window.open("analytics.html", "_blank");
-}
-function openRevenue() {
-    window.open("revenue.html", "_blank");
-}
 function selectUser(user) {
     selectedUser = user;
     document.getElementById("passwordInput").style.display = "block";
@@ -955,7 +975,6 @@ function checkLogin() {
     }
 }
 
-// Load items from JSON files for each kitchen
 async function loadKitchenItems() {
     for (const kitchen of KITCHENS) {
         const jsonPath = KITCHEN_JSON_FILES[kitchen];
@@ -964,52 +983,24 @@ async function loadKitchenItems() {
             if (response.ok) {
                 const data = await response.json();
                 kitchenItemsCache[kitchen] = data.items || data;
-                console.log(`Loaded ${kitchenItemsCache[kitchen].length} items for ${kitchen}`);
             } else {
-                // Fallback to default items if JSON not found
                 kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
-                console.warn(`Using default items for ${kitchen}`);
             }
         } catch(e) {
             kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
-            console.warn(`Error loading ${jsonPath}, using defaults:`, e);
         }
     }
 }
 
 function getDefaultItemsForKitchen(kitchen) {
     const defaults = {
-        "Hot Kitchen": [
-            { code: "HK001", name: "Chicken Breast", unit: "kg", maxLimit: 50, price: 120 },
-            { code: "HK002", name: "Beef Striploin", unit: "kg", maxLimit: 30, price: 250 },
-            { code: "HK003", name: "Rice Basmati", unit: "kg", maxLimit: 100, price: 45 }
-        ],
-        "Cold Kitchen": [
-            { code: "CK001", name: "Pine Nut", unit: "kg", maxLimit: 10, price: 350 },
-            { code: "CK002", name: "Lettuce", unit: "kg", maxLimit: 20, price: 30 },
-            { code: "CK003", name: "Tomatoes", unit: "kg", maxLimit: 30, price: 25 }
-        ],
-        "Pastry / Bakery": [
-            { code: "PB001", name: "Glucose", unit: "kg", maxLimit: 15, price: 80 },
-            { code: "PB002", name: "Flour", unit: "kg", maxLimit: 100, price: 35 },
-            { code: "PB003", name: "Butter", unit: "kg", maxLimit: 40, price: 180 }
-        ],
-        "Butchery": [
-            { code: "BT001", name: "Crabs Whole Frozen", unit: "kg", maxLimit: 25, price: 150 },
-            { code: "BT002", name: "Lamb Chops", unit: "kg", maxLimit: 20, price: 220 }
-        ],
-        "Beach House": [
-            { code: "BH001", name: "Fish Fillet", unit: "kg", maxLimit: 30, price: 130 },
-            { code: "BH002", name: "Shrimp", unit: "kg", maxLimit: 20, price: 180 }
-        ],
-        "Nihon Kitchen": [
-            { code: "NK001", name: "Sushi Rice", unit: "kg", maxLimit: 25, price: 95 },
-            { code: "NK002", name: "Nori Seaweed", unit: "pack", maxLimit: 50, price: 45 }
-        ],
-        "Staff Kitchen": [
-            { code: "SK001", name: "Staff Meal Rice", unit: "kg", maxLimit: 60, price: 40 },
-            { code: "SK002", name: "Staff Meal Chicken", unit: "kg", maxLimit: 40, price: 100 }
-        ]
+        "Hot Kitchen": [{ code: "HK001", name: "Chicken Breast", unit: "kg", maxLimit: 50, price: 120 }],
+        "Cold Kitchen": [{ code: "CK001", name: "Pine Nut", unit: "kg", maxLimit: 10, price: 350 }],
+        "Pastry / Bakery": [{ code: "PB001", name: "Glucose", unit: "kg", maxLimit: 15, price: 80 }],
+        "Butchery": [{ code: "BT001", name: "Crabs Whole Frozen", unit: "kg", maxLimit: 25, price: 150 }],
+        "Beach House": [{ code: "BH001", name: "Fish Fillet", unit: "kg", maxLimit: 30, price: 130 }],
+        "Nihon Kitchen": [{ code: "NK001", name: "Sushi Rice", unit: "kg", maxLimit: 25, price: 95 }],
+        "Staff Kitchen": [{ code: "SK001", name: "Staff Meal Rice", unit: "kg", maxLimit: 60, price: 40 }]
     };
     return defaults[kitchen] || [];
 }
@@ -1027,19 +1018,13 @@ async function loadRequests() {
 function getRequestStatus(items) {
     if(!items || items.length === 0) return "pending";
     let allProcessed = true;
-    let approved = 0;
-    let rejected = 0;
-    
+    let approved = 0, rejected = 0;
     items.forEach(item => {
         if(item.status === "approved") approved++;
         else if(item.status === "rejected") rejected++;
         else allProcessed = false;
     });
-    
-    if(items.length > 0 && items[0].completedVia === "accept") {
-        return "accepted";
-    }
-    
+    if(items.length > 0 && items[0].completedVia === "accept") return "accepted";
     if(allProcessed) {
         if(approved === items.length) return "approved";
         if(rejected === items.length) return "rejected";
@@ -1050,11 +1035,7 @@ function getRequestStatus(items) {
 
 async function updateRequest(id, items, completedVia = null) {
     try {
-        if(completedVia) {
-            items.forEach(item => {
-                item.completedVia = completedVia;
-            });
-        }
+        if(completedVia) items.forEach(item => item.completedVia = completedVia);
         await db.collection("kitchen_requests").doc(id).update({ items });
         showToast(`✅ Updated by ${currentAdmin}`);
         await loadRequests();
@@ -1062,11 +1043,10 @@ async function updateRequest(id, items, completedVia = null) {
     } catch(e) { showToast("Update error: " + e.message); return false; }
 }
 
-// Show add item modal with search functionality - ONLY for pending orders
+// IMPROVED: Add Missing Item with Price and better UI
 function showAddItemModal(reqId, kitchenSection, requestStatus) {
-    // CRITICAL: Only allow adding items to PENDING orders
     if (requestStatus !== "pending") {
-        showToast("❌ Cannot add items to completed orders (Approved, Rejected, or Accepted)");
+        showToast("❌ Cannot add items to completed orders");
         return;
     }
     
@@ -1077,57 +1057,61 @@ function showAddItemModal(reqId, kitchenSection, requestStatus) {
     modal.innerHTML = `
         <div class="modal-content">
             <h2>➕ Add Missing Item</h2>
-            <p>Kitchen: <strong>${kitchenSection}</strong></p>
+            <p>Kitchen: <strong>${kitchenSection}</strong> | Status: <span style="color:#f39c12;">Pending</span></p>
             <div class="search-container">
                 <input type="text" id="itemSearchInput" placeholder="🔍 Search by name or code..." autocomplete="off">
             </div>
             <div class="item-list" id="itemList">
                 ${catalog.map(item => `
-                    <div class="item-list-item" onclick="quickAddItem('${reqId}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                    <div class="item-list-item" data-item='${JSON.stringify(item)}'>
                         <div class="item-info">
                             <div class="item-code">${item.code}</div>
                             <div class="item-name">${escapeHtml(item.name)}</div>
-                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | ${item.price} EGP</div>
+                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | <span class="price-highlight">${item.price} EGP</span></div>
                         </div>
-                        <button>+ Add</button>
+                        <button onclick="quickAddItem('${reqId}', this)">+ Add</button>
                     </div>
                 `).join('')}
             </div>
-            <div style="text-align: center; margin: 10px 0;">OR</div>
-            <input type="text" id="newItemCode" placeholder="Item Code (e.g., HK099)">
-            <input type="text" id="newItemName" placeholder="Item Name">
-            <input type="text" id="newItemUnit" placeholder="Unit (kg, pack, box)">
-            <input type="number" id="newItemPrice" placeholder="Price per unit (EGP)" step="0.01">
-            <input type="number" id="newItemMax" placeholder="Max Limit" value="100">
-            <input type="number" id="newItemQty" placeholder="Requested Quantity" value="1" step="0.5">
-            <button onclick="addCustomItemToRequest('${reqId}')">➕ Add Custom Item</button>
+            <div style="text-align: center; margin: 15px 0; color: #999;">━━━━━━━━━━━━━━━━━━━━</div>
+            <h3>➕ Create Custom Item</h3>
+            <div class="form-row">
+                <input type="text" id="newItemCode" placeholder="Item Code *" autocomplete="off">
+                <input type="text" id="newItemName" placeholder="Item Name *" autocomplete="off">
+            </div>
+            <div class="form-row">
+                <input type="text" id="newItemUnit" placeholder="Unit (kg, pack, box) *" autocomplete="off">
+                <input type="number" id="newItemPrice" placeholder="Price (EGP) *" step="0.01">
+            </div>
+            <div class="form-row">
+                <input type="number" id="newItemMax" placeholder="Max Limit" value="100">
+                <input type="number" id="newItemQty" placeholder="Qty Requested" value="1" step="0.5">
+            </div>
+            <button onclick="addCustomItemToRequest('${reqId}')" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">✨ Create & Add Custom Item</button>
             <button class="close-modal" onclick="this.closest('.modal').remove()">Cancel</button>
         </div>
     `;
     document.body.appendChild(modal);
     
-    // Add search functionality
+    // Search functionality
     const searchInput = modal.querySelector('#itemSearchInput');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
+            const term = e.target.value.toLowerCase();
             const items = catalog;
-            const filteredItems = items.filter(item => 
-                item.name.toLowerCase().includes(searchTerm) || 
-                item.code.toLowerCase().includes(searchTerm)
-            );
-            const itemList = modal.querySelector('#itemList');
-            if (filteredItems.length === 0) {
-                itemList.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No items found</div>';
+            const filtered = items.filter(i => i.name.toLowerCase().includes(term) || i.code.toLowerCase().includes(term));
+            const list = modal.querySelector('#itemList');
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No items found</div>';
             } else {
-                itemList.innerHTML = filteredItems.map(item => `
-                    <div class="item-list-item" onclick="quickAddItem('${reqId}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                list.innerHTML = filtered.map(item => `
+                    <div class="item-list-item" data-item='${JSON.stringify(item)}'>
                         <div class="item-info">
                             <div class="item-code">${item.code}</div>
                             <div class="item-name">${escapeHtml(item.name)}</div>
-                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | ${item.price} EGP</div>
+                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | <span class="price-highlight">${item.price} EGP</span></div>
                         </div>
-                        <button>+ Add</button>
+                        <button onclick="quickAddItem('${reqId}', this)">+ Add</button>
                     </div>
                 `).join('');
             }
@@ -1135,20 +1119,20 @@ function showAddItemModal(reqId, kitchenSection, requestStatus) {
     }
 }
 
-// Quick add from search results
-function quickAddItem(reqId, item) {
+function quickAddItem(reqId, buttonElement) {
+    const itemDiv = buttonElement.closest('.item-list-item');
+    const itemData = JSON.parse(itemDiv.getAttribute('data-item'));
     addItemToRequest(reqId, {
-        code: item.code,
-        name: item.name,
-        unit: item.unit,
-        price: item.price,
-        maxLimit: item.maxLimit,
+        code: itemData.code,
+        name: itemData.name,
+        unit: itemData.unit,
+        price: itemData.price,
+        maxLimit: itemData.maxLimit,
         originalQty: 1,
         status: "pending",
         approvedQty: null
     });
-    const modal = document.querySelector('.modal');
-    if (modal) modal.remove();
+    document.querySelector('.modal')?.remove();
 }
 
 function addCustomItemToRequest(reqId) {
@@ -1159,13 +1143,21 @@ function addCustomItemToRequest(reqId) {
     const maxLimit = parseFloat(document.getElementById('newItemMax')?.value);
     const originalQty = parseFloat(document.getElementById('newItemQty')?.value);
     
-    if(!code || !name || !unit || isNaN(price) || isNaN(maxLimit) || isNaN(originalQty)) {
-        showToast("Please fill all fields correctly");
+    if(!code || !name || !unit || isNaN(price) || price <= 0) {
+        showToast("❌ Please fill required fields: Code, Name, Unit, Price");
+        return;
+    }
+    if(isNaN(maxLimit) || maxLimit <= 0) {
+        showToast("⚠️ Max limit must be greater than 0");
+        return;
+    }
+    if(isNaN(originalQty) || originalQty <= 0) {
+        showToast("⚠️ Quantity must be greater than 0");
         return;
     }
     
     addItemToRequest(reqId, {
-        code: code,
+        code: code.toUpperCase(),
         name: name,
         unit: unit,
         price: price,
@@ -1174,59 +1166,29 @@ function addCustomItemToRequest(reqId) {
         status: "pending",
         approvedQty: null
     });
-    document.querySelector('.modal').remove();
+    document.querySelector('.modal')?.remove();
 }
 
 async function addItemToRequest(reqId, newItem) {
     const req = allRequests.find(r => r.id === reqId);
-    if(!req) {
-        showToast("Request not found");
-        return;
-    }
+    if(!req) { showToast("Request not found"); return; }
+    if(getRequestStatus(req.items) !== "pending") { showToast("❌ Order already completed"); return; }
     
-    // Double-check: Only allow adding to pending orders
-    const currentStatus = getRequestStatus(req.items);
-    if (currentStatus !== "pending") {
-        showToast("❌ Cannot add items - order is already completed");
-        return;
-    }
-    
-    const itemToAdd = {
-        ...newItem,
-        status: "pending",
-        approvedQty: null,
-        originalQty: newItem.originalQty || 1
-    };
-    
+    const itemToAdd = { ...newItem, status: "pending", approvedQty: null, originalQty: newItem.originalQty || 1 };
     req.items.push(itemToAdd);
     await updateRequest(reqId, req.items);
-    showToast(`✅ Added ${itemToAdd.name} to request`);
+    showToast(`✅ Added ${itemToAdd.name} (${itemToAdd.price} EGP/unit)`);
 }
 
 async function approveItem(reqId, idx) {
     const input = document.getElementById(`qty_${reqId}_${idx}`);
     let qty = parseFloat(input?.value || 0);
-    
-    if(isNaN(qty) || qty < 0) { 
-        showToast("Enter valid quantity"); 
-        return; 
-    }
-    
+    if(isNaN(qty) || qty < 0) { showToast("Enter valid quantity"); return; }
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         const item = req.items[idx];
-        
-        if(qty > item.maxLimit) { 
-            if(!confirm(`⚠️ Warning: ${qty} exceeds max limit (${item.maxLimit}). Continue anyway?`)) {
-                return;
-            }
-        }
-        if(qty > item.originalQty) { 
-            if(!confirm(`⚠️ Warning: ${qty} exceeds requested quantity (${item.originalQty}). Continue anyway?`)) {
-                return;
-            }
-        }
-        
+        if(qty > item.maxLimit && !confirm(`⚠️ Exceeds max limit (${item.maxLimit}). Continue?`)) return;
+        if(qty > item.originalQty && !confirm(`⚠️ Exceeds requested (${item.originalQty}). Continue?`)) return;
         item.status = "approved";
         item.approvedQty = qty;
         item.approvedBy = currentAdmin;
@@ -1238,7 +1200,7 @@ async function approveItem(reqId, idx) {
 
 async function rejectItem(reqId, idx) {
     const reason = prompt(`Rejection reason (${currentAdmin}):`, "Out of stock");
-    if(reason && reason.trim()) {
+    if(reason?.trim()) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
             req.items[idx].status = "rejected";
@@ -1257,9 +1219,8 @@ async function approveAll(reqId) {
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         req.items.forEach(item => {
-            let qty = item.originalQty;
             item.status = "approved";
-            item.approvedQty = qty;
+            item.approvedQty = item.originalQty;
             item.approvedBy = currentAdmin;
             item.approvedAt = new Date().toLocaleString();
             delete item.completedVia;
@@ -1271,7 +1232,7 @@ async function approveAll(reqId) {
 
 async function rejectAll(reqId) {
     const reason = prompt(`Rejection reason for ALL (${currentAdmin}):`, "Not available");
-    if(reason && reason.trim()) {
+    if(reason?.trim()) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
             req.items.forEach(item => {
@@ -1289,7 +1250,7 @@ async function rejectAll(reqId) {
 }
 
 async function acceptRequest(reqId) {
-    if(!confirm(`Accept this request? It will be locked and moved to Accepted section.`)) return;
+    if(!confirm(`Accept this request? It will be locked.`)) return;
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         req.items.forEach(item => {
@@ -1308,80 +1269,31 @@ async function acceptRequest(reqId) {
 }
 
 function showResetConfirmModal() {
-    const toDelete = allRequests.filter(req => {
-        const status = getRequestStatus(req.items);
-        return status !== "pending";
-    });
-    
-    if(toDelete.length === 0) {
-        showToast("ℹ️ No completed requests to delete");
-        return;
-    }
-    
+    const toDelete = allRequests.filter(req => getRequestStatus(req.items) !== "pending");
+    if(toDelete.length === 0) { showToast("ℹ️ No completed requests to delete"); return; }
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
-    modal.innerHTML = `
-        <div class="confirm-modal-content">
-            <h3>⚠️ PERMANENT DELETION ⚠️</h3>
-            <p>You are about to delete <strong>${toDelete.length}</strong> completed request(s).</p>
-            <p class="warning-text">This action cannot be undone!</p>
-            <p>Type <strong style="color:#e74c3c;">DELETE</strong> below to confirm:</p>
-            <input type="text" id="confirmDeleteInput" placeholder="Type DELETE" autocomplete="off">
-            <div class="confirm-buttons">
-                <button class="btn-cancel-delete" onclick="this.closest('.confirm-modal').remove()">Cancel</button>
-                <button class="btn-confirm-delete" id="confirmDeleteBtn" disabled>Delete Permanently</button>
-            </div>
-        </div>
-    `;
+    modal.innerHTML = `<div class="confirm-modal-content"><h3>⚠️ PERMANENT DELETION ⚠️</h3><p>Delete <strong>${toDelete.length}</strong> completed request(s).</p><p class="warning-text">This cannot be undone!</p><p>Type <strong style="color:#e74c3c;">DELETE</strong> to confirm:</p><input type="text" id="confirmDeleteInput" placeholder="Type DELETE" autocomplete="off"><div class="confirm-buttons"><button class="btn-cancel-delete" onclick="this.closest('.confirm-modal').remove()">Cancel</button><button class="btn-confirm-delete" id="confirmDeleteBtn" disabled>Delete</button></div></div>`;
     document.body.appendChild(modal);
-    
     const input = modal.querySelector('#confirmDeleteInput');
     const confirmBtn = modal.querySelector('#confirmDeleteBtn');
-    
     input.focus();
-    
-    input.addEventListener('input', function(e) {
-        if(e.target.value === 'DELETE') {
-            confirmBtn.disabled = false;
-        } else {
-            confirmBtn.disabled = true;
-        }
-    });
-    
+    input.addEventListener('input', e => confirmBtn.disabled = e.target.value !== 'DELETE');
     confirmBtn.onclick = async () => {
-        const typedValue = input.value;
-        if(typedValue === 'DELETE') {
-            modal.remove();
-            await executeResetCompleted(toDelete);
-        } else {
-            showToast("❌ Deletion cancelled - incorrect confirmation text");
-            modal.remove();
-        }
+        if(input.value === 'DELETE') { modal.remove(); await executeResetCompleted(toDelete); }
+        else { showToast("❌ Incorrect confirmation"); modal.remove(); }
     };
 }
 
 async function executeResetCompleted(toDelete) {
-    let deletedCount = 0;
-    let errorCount = 0;
-    
-    showToast(`⚠️ Deleting ${toDelete.length} completed requests...`);
-    
+    let deleted = 0, errors = 0;
+    showToast(`⚠️ Deleting ${toDelete.length} requests...`);
     for(const req of toDelete) {
-        try {
-            await db.collection("kitchen_requests").doc(req.id).delete();
-            deletedCount++;
-        } catch(e) {
-            console.error("Delete error:", e);
-            errorCount++;
-        }
+        try { await db.collection("kitchen_requests").doc(req.id).delete(); deleted++; }
+        catch(e) { errors++; }
     }
-    
     await loadRequests();
-    if(errorCount === 0) {
-        showToast(`✅ Reset complete! Deleted ${deletedCount} completed requests.`);
-    } else {
-        showToast(`⚠️ Deleted ${deletedCount} requests, ${errorCount} failed.`);
-    }
+    showToast(errors === 0 ? `✅ Deleted ${deleted} completed requests` : `⚠️ Deleted ${deleted}, ${errors} failed`);
 }
 
 function exportExcel() {
@@ -1393,22 +1305,10 @@ function exportExcel() {
             const price = item.price || 0;
             const approvedQty = item.status === "approved" ? (item.approvedQty || 0) : 0;
             const totalValue = approvedQty * price;
-            if(item.status === "approved") { 
-                status = "Approved"; 
-                actionBy = item.approvedBy || ""; 
-            }
-            else if(item.status === "rejected") { 
-                status = "Rejected"; 
-                actionBy = item.rejectedBy || ""; 
-            }
-            else if(item.completedVia === "accept") {
-                status = "Accepted";
-                actionBy = item.approvedBy || item.rejectedBy || currentAdmin;
-            }
-            else { 
-                status = "Pending"; 
-                actionBy = "-";
-            }
+            if(item.status === "approved") { status = "Approved"; actionBy = item.approvedBy || ""; }
+            else if(item.status === "rejected") { status = "Rejected"; actionBy = item.rejectedBy || ""; }
+            else if(item.completedVia === "accept") { status = "Accepted"; actionBy = item.approvedBy || item.rejectedBy || currentAdmin; }
+            else { status = "Pending"; actionBy = "-"; }
             csv += `"${req.requestId}","${req.section}","${req.chefName}","${req.submittedAt}","${item.name}","${item.code}",${item.originalQty},"${item.unit}",${price},${approvedQty},"${status}","${actionBy}",${totalValue}\n`;
         });
     });
@@ -1423,10 +1323,7 @@ function updateStats() {
     let pending=0, approved=0, rejected=0, accepted=0;
     allRequests.forEach(req => {
         const s = getRequestStatus(req.items);
-        if(s === "pending") pending++;
-        else if(s === "approved") approved++;
-        else if(s === "rejected") rejected++;
-        else if(s === "accepted") accepted++;
+        if(s === "pending") pending++; else if(s === "approved") approved++; else if(s === "rejected") rejected++; else if(s === "accepted") accepted++;
     });
     document.getElementById("pendingCount").innerText = pending;
     document.getElementById("approvedCount").innerText = approved;
@@ -1442,164 +1339,66 @@ function renderUI() {
     const kitchenDiv = document.getElementById("kitchenFilters");
     kitchenDiv.innerHTML = `<button class="kitchen-filter-btn ${currentKitchen === 'all' ? 'active' : ''}" onclick="filterKitchen('all')">📋 All</button>`;
     KITCHENS.forEach(k => {
-        let icon = k === 'Hot Kitchen' ? '🔥' : k === 'Cold Kitchen' ? '❄️' : k === 'Pastry / Bakery' ? '🍰' : k === 'Butchery' ? '🥩' : k === 'Beach House' ? '🏖️' : k === 'Nihon Kitchen' ? '🍜' : '👥';
+        let icon = { "Hot Kitchen":"🔥", "Cold Kitchen":"❄️", "Pastry / Bakery":"🍰", "Butchery":"🥩", "Beach House":"🏖️", "Nihon Kitchen":"🍜", "Staff Kitchen":"👥" }[k] || "📌";
         let name = k.replace(' Kitchen', '').replace(' / Bakery', '');
         kitchenDiv.innerHTML += `<button class="kitchen-filter-btn ${currentKitchen === k ? 'active' : ''}" onclick="filterKitchen('${k}')">${icon} ${name}</button>`;
     });
     
     const tabsDiv = document.getElementById("statusTabs");
-    const statuses = ["pending", "approved", "rejected", "accepted", "all"];
-    const statusNames = ["⏳ Pending", "✅ Approved", "❌ Rejected", "🟣 Accepted", "📋 All"];
-    tabsDiv.innerHTML = "";
-    statuses.forEach((s, i) => {
-        tabsDiv.innerHTML += `<button class="tab-btn ${currentStatus === s ? 'active' : ''}" onclick="setFilter('${s}')">${statusNames[i]}</button>`;
+    ["pending","approved","rejected","accepted","all"].forEach((s, i) => {
+        const names = ["⏳ Pending","✅ Approved","❌ Rejected","🟣 Accepted","📋 All"];
+        tabsDiv.innerHTML += `<button class="tab-btn ${currentStatus === s ? 'active' : ''}" onclick="setFilter('${s}')">${names[i]}</button>`;
     });
     
-    let filtered = [...allRequests];
-    if(currentKitchen !== "all") filtered = filtered.filter(r => r.section === currentKitchen);
-    if(currentStatus !== "all") filtered = filtered.filter(r => getRequestStatus(r.items) === currentStatus);
-    
+    let filtered = allRequests.filter(r => (currentKitchen === "all" || r.section === currentKitchen) && (currentStatus === "all" || getRequestStatus(r.items) === currentStatus));
     const container = document.getElementById("requestsContainer");
     if(!filtered.length) { container.innerHTML = `<div class="empty-state">📭 No requests found</div>`; return; }
     
     container.innerHTML = "";
     filtered.forEach(req => {
         const requestStatus = getRequestStatus(req.items);
-        const kitchenClass = {
-            "Hot Kitchen": "kitchen-hot", "Cold Kitchen": "kitchen-cold", "Pastry / Bakery": "kitchen-pastry",
-            "Butchery": "kitchen-butchery", "Beach House": "kitchen-beach", "Nihon Kitchen": "kitchen-nihon", "Staff Kitchen": "kitchen-staff"
-        }[req.section] || "kitchen-staff";
-        
-        let requestedTotalValue = 0;
-        let approvedTotalValue = 0;
+        const kitchenClass = { "Hot Kitchen":"kitchen-hot","Cold Kitchen":"kitchen-cold","Pastry / Bakery":"kitchen-pastry","Butchery":"kitchen-butchery","Beach House":"kitchen-beach","Nihon Kitchen":"kitchen-nihon","Staff Kitchen":"kitchen-staff" }[req.section] || "kitchen-staff";
+        let requestedTotal = 0, approvedTotal = 0;
         req.items.forEach(item => {
             const price = item.price || 0;
-            const requestedQty = item.originalQty;
-            requestedTotalValue += requestedQty * price;
-            if(item.status === "approved") {
-                const approvedQty = item.approvedQty || 0;
-                approvedTotalValue += approvedQty * price;
-            }
+            requestedTotal += item.originalQty * price;
+            if(item.status === "approved") approvedTotal += (item.approvedQty || 0) * price;
         });
+        let hasIndividual = false, isCompleted = false;
+        if(requestStatus === "pending") hasIndividual = req.items.some(i => i.status === "approved" || i.status === "rejected");
+        else isCompleted = true;
+        const canAdd = requestStatus === "pending";
         
-        let hasIndividualAction = false;
-        let isCompleted = false;
-        if(requestStatus === "pending") {
-            for(const item of req.items) {
-                if(item.status === "approved" || item.status === "rejected") {
-                    hasIndividualAction = true;
-                    break;
-                }
-            }
-        } else {
-            isCompleted = true;
-        }
-        
-        // Only allow adding items if status is pending
-        const canAddItems = (requestStatus === "pending");
-        
-        let itemsHtml = `<div class="table-wrapper"><table class="admin-table"><thead>
-            <tr><th>Code</th><th>Item</th><th>Requested Qty</th><th>Unit</th><th>Price/Unit (EGP)</th><th>Approved Qty</th><th>Total Value (EGP)</th><th>Action</th><th>Status</th>
-        </thead><tbody>`;
-        
+        let itemsHtml = `<div class="table-wrapper"><table class="admin-table"><thead><tr><th>Code</th><th>Item</th><th>Requested Qty</th><th>Unit</th><th>Price/Unit (EGP)</th><th>Approved Qty</th><th>Total Value (EGP)</th><th>Action</th><th>Status</th></tr></thead><tbody>`;
         req.items.forEach((item, idx) => {
             const price = item.price || 0;
             const approvedQty = item.status === "approved" ? (item.approvedQty || 0) : 0;
             const totalValue = approvedQty * price;
-            
             if(item.status === "approved") {
-                itemsHtml += `<tr style="background:#e8f5e9;">
-                    <td>${item.code}</td>
-                    <td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td>
-                    <td><span class="requested-qty">${item.originalQty}</span></td>
-                    <td>${item.unit}</td>
-                    <td><span class="item-price">${price.toFixed(2)}</span></td>
-                    <td>${approvedQty.toFixed(1)}</div></td>
-                    <td><strong style="color:#27ae60;">${totalValue.toFixed(2)}</strong></td>
-                    <td><span class="btn-approve" style="background:#27ae60;opacity:0.7;cursor:default;">✅ Approved</span></td>
-                    <td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}<br>📅 ${item.approvedAt || ''}</div></td>
-                </tr>`;
+                itemsHtml += `<tr style="background:#e8f5e9;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td>${approvedQty.toFixed(1)}</td><td><strong style="color:#27ae60;">${totalValue.toFixed(2)}</strong></td><td><span class="btn-approve" style="background:#27ae60;opacity:0.7;cursor:default;">✅ Approved</span></td><td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}<br>📅 ${item.approvedAt || ''}</div></td></tr>`;
             } else if(item.status === "rejected") {
-                itemsHtml += `<tr style="background:#fee2e2;">
-                    <td>${item.code}</td>
-                    <td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td>
-                    <td><span class="requested-qty">${item.originalQty}</span></td>
-                    <td>${item.unit}</td>
-                    <td><span class="item-price">${price.toFixed(2)}</span></td>
-                    <td><strong style="color:#e74c3c;">0</strong></td>
-                    <td><strong style="color:#e74c3c;">0.00</strong></td>
-                    <td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;cursor:default;">❌ Rejected</span></td>
-                    <td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td>
-                <tr>`;
+                itemsHtml += `<tr style="background:#fee2e2;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><strong style="color:#e74c3c;">0</strong></td><td><strong style="color:#e74c3c;">0.00</strong></td><td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;cursor:default;">❌ Rejected</span></td><td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td></tr>`;
             } else {
-                itemsHtml += `<tr>
-                    <td>${item.code}</td>
-                    <td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td>
-                    <td><span class="requested-qty">${item.originalQty}</span></td>
-                    <td>${item.unit}</td>
-                    <td><span class="item-price">${price.toFixed(2)}</span></td>
-                    <td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${item.originalQty}" min="0" step="0.5"></td>
-                    <td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600; color:#1e3c72;">${(item.originalQty * price).toFixed(2)}</span></td>
-                    <td class="action-buttons"><button class="btn-approve" onclick="approveItem('${req.id}', ${idx})">✅ Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">❌ Reject</button></div></td>
-                    <td><span class="status-pending-cell">Pending</span><div class="admin-info-text">Waiting for approval</div></td>
-                </tr>`;
+                itemsHtml += `<tr><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${item.originalQty}" min="0" step="0.5"></td><td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600; color:#1e3c72;">${(item.originalQty * price).toFixed(2)}</span></td><td class="action-buttons"><button class="btn-approve" onclick="approveItem('${req.id}', ${idx})">✅ Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">❌ Reject</button></td><td><span class="status-pending-cell">Pending</span><div class="admin-info-text">Waiting for approval</div></td></tr>`;
             }
         });
-        itemsHtml += `</tbody>}</div>`;
+        itemsHtml += `</tbody></table></div>`;
         
-        let actions = "";
-        if(!isCompleted) {
-            actions = `<div class="request-actions">
-                <button class="btn-approve-all" id="approveAllBtn_${req.id}" onclick="approveAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>✅ Approve All</button>
-                <button class="btn-reject-all" id="rejectAllBtn_${req.id}" onclick="rejectAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>❌ Reject All</button>
-                <button class="btn-accept" id="acceptBtn_${req.id}" onclick="acceptRequest('${req.id}')" ${!hasIndividualAction ? 'disabled' : ''}>🟣 Accept (Complete)</button>
-                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAddItems ? 'disabled' : ''}>➕ Add Missing Item</button>
-            </div>`;
-        } else {
-            actions = `<div class="request-actions"><button class="btn-accept" style="background:#6c757d; cursor:default;" disabled>✅ Request Completed - Locked</button></div>`;
-        }
+        let actions = !isCompleted ? `<div class="request-actions"><button class="btn-approve-all" onclick="approveAll('${req.id}')" ${hasIndividual ? 'disabled' : ''}>✅ Approve All</button><button class="btn-reject-all" onclick="rejectAll('${req.id}')" ${hasIndividual ? 'disabled' : ''}>❌ Reject All</button><button class="btn-accept" onclick="acceptRequest('${req.id}')" ${!hasIndividual ? 'disabled' : ''}>🟣 Accept</button><button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAdd ? 'disabled' : ''}>➕ Add Missing Item</button></div>` : `<div class="request-actions"><button class="btn-accept" style="background:#6c757d;cursor:default;" disabled>✅ Completed - Locked</button></div>`;
         
-        let statusText = "", statusClass = "";
-        if(requestStatus === "pending") { statusText = "Pending"; statusClass = "status-pending"; }
-        else if(requestStatus === "approved") { statusText = "Fully Approved"; statusClass = "status-approved"; }
-        else if(requestStatus === "rejected") { statusText = "Rejected"; statusClass = "status-rejected"; }
-        else { statusText = "Accepted"; statusClass = "status-accepted"; }
+        let statusText = { pending:"Pending", approved:"Fully Approved", rejected:"Rejected", accepted:"Accepted" }[requestStatus] || "Pending";
+        let statusClass = { pending:"status-pending", approved:"status-approved", rejected:"status-rejected", accepted:"status-accepted" }[requestStatus] || "status-pending";
         
-        container.innerHTML += `<div class="request-card">
-            <div class="request-header">
-                <div><span class="request-id">📄 ${req.requestId}</span><span class="kitchen-badge ${kitchenClass}" style="margin-left:10px;">${req.section}</span></div>
-                <div class="request-total-badge">
-                    <span>💰 Requested: ${requestedTotalValue.toFixed(2)} EGP</span>
-                    <span>✅ Approved: ${approvedTotalValue.toFixed(2)} EGP</span>
-                </div>
-                <span class="status-badge ${statusClass}">${statusText}</span>
-            </div>
-            <div class="request-info">
-                <div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div>
-                <div class="info-item"><div class="info-label">📅 SUBMITTED</div><div class="info-value">${req.submittedAt}</div></div>
-                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAddItems ? 'disabled' : ''}>➕ Add Missing Item</button>
-            </div>
-            ${itemsHtml}
-            ${actions}
-        </div>`;
+        container.innerHTML += `<div class="request-card"><div class="request-header"><div><span class="request-id">📄 ${req.requestId}</span><span class="kitchen-badge ${kitchenClass}" style="margin-left:10px;">${req.section}</span></div><div class="request-total-badge"><span>💰 Requested: ${requestedTotal.toFixed(2)} EGP</span><span>✅ Approved: ${approvedTotal.toFixed(2)} EGP</span></div><span class="status-badge ${statusClass}">${statusText}</span></div><div class="request-info"><div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div><div class="info-item"><div class="info-label">📅 SUBMITTED</div><div class="info-value">${req.submittedAt}</div></div><button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAdd ? 'disabled' : ''}>➕ Add Missing Item</button></div>${itemsHtml}${actions}</div>`;
     });
     updateStats();
 }
 
 function logout() {
-    if(confirm("Are you sure you want to logout?")) {
-        if(unsubscribeListener) unsubscribeListener();
-        localStorage.removeItem("admin");
-        sessionStorage.clear();
-        window.location.href = "index.html";
-    }
+    if(confirm("Logout?")) { localStorage.removeItem("admin"); sessionStorage.clear(); window.location.href = "index.html"; }
 }
-
 function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
-function showToast(msg) { 
-    const t = document.createElement("div"); t.className = "toast"; t.innerText = msg; 
-    document.body.appendChild(t); setTimeout(() => t.remove(), 2500); 
-}
+function showToast(msg) { const t = document.createElement("div"); t.className = "toast"; t.innerText = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
 
 const saved = localStorage.getItem("admin");
 if(saved && ADMIN_PASSWORDS[saved]) {
