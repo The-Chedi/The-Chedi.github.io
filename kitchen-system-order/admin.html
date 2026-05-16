@@ -540,15 +540,14 @@ body {
     padding: 30px;
     border-radius: 24px;
     text-align: center;
-    max-width: 600px;
+    max-width: 500px;
     width: 90%;
-    max-height: 85vh;
-    overflow-y: auto;
 }
 
 .modal-content h2 {
     margin-bottom: 15px;
     color: #1e3c72;
+    font-size: 1.3rem;
 }
 
 .modal-content h3 {
@@ -586,10 +585,10 @@ body {
 
 .modal-content input, .modal-content select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
+    padding: 12px;
+    margin-bottom: 15px;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 14px;
 }
 
@@ -708,101 +707,48 @@ body {
     background: #7f8c8d;
 }
 
-.search-container {
-    margin-bottom: 20px;
-}
-
-.search-container input {
-    width: 100%;
-    padding: 12px 15px 12px 40px;
-    border: 2px solid #e0e0e0;
-    border-radius: 30px;
-    font-size: 14px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
-    background-repeat: no-repeat;
-    background-position: 15px center;
-}
-
-.search-container input:focus {
-    outline: none;
-    border-color: #3498db;
-}
-
-.item-list {
-    max-height: 350px;
-    overflow-y: auto;
-    margin: 15px 0;
-    border: 1px solid #eee;
-    border-radius: 12px;
-}
-
-.item-list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.item-list-item:hover {
-    background: #f0f8ff;
-}
-
-.item-list-item .item-info {
-    flex: 1;
-}
-
-.item-list-item .item-code {
-    font-size: 0.7rem;
-    color: #666;
-    font-family: monospace;
-}
-
-.item-list-item .item-name {
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin: 3px 0;
-}
-
-.item-list-item .item-details {
-    font-size: 0.7rem;
-    color: #888;
-}
-
-.item-list-item button {
-    background: #2ecc71;
+.refresh-icon {
+    background: none;
     border: none;
-    padding: 6px 15px;
-    border-radius: 25px;
-    color: white;
-    font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 1.2rem;
     cursor: pointer;
-    transition: all 0.2s;
+    padding: 5px;
+    margin-left: 10px;
+    transition: transform 0.3s;
 }
 
-.item-list-item button:hover {
-    background: #27ae60;
-    transform: scale(1.02);
+.refresh-icon:hover {
+    transform: rotate(180deg);
 }
 
-.form-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
+.item-select-wrapper {
+    position: relative;
+    margin-bottom: 15px;
 }
 
-.form-row input {
-    flex: 1;
-    margin-bottom: 0;
+.item-select-wrapper select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
 }
 
-.price-highlight {
-    font-size: 1.1rem;
+.price-preview {
+    background: #f0f8ff;
+    padding: 12px;
+    border-radius: 12px;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.price-preview span {
     font-weight: bold;
     color: #e67e22;
+    font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {
@@ -858,10 +804,6 @@ body {
         flex-direction: column;
         gap: 5px;
         text-align: center;
-    }
-    .form-row {
-        flex-direction: column;
-        gap: 12px;
     }
 }
 
@@ -979,7 +921,7 @@ async function loadKitchenItems() {
     for (const kitchen of KITCHENS) {
         const jsonPath = KITCHEN_JSON_FILES[kitchen];
         try {
-            const response = await fetch(jsonPath);
+            const response = await fetch(jsonPath + "?t=" + Date.now()); // Add timestamp to bypass cache
             if (response.ok) {
                 const data = await response.json();
                 kitchenItemsCache[kitchen] = data.items || data;
@@ -990,6 +932,28 @@ async function loadKitchenItems() {
             kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
         }
     }
+}
+
+function refreshKitchenItems(kitchen, selectElement) {
+    const jsonPath = KITCHEN_JSON_FILES[kitchen] + "?t=" + Date.now();
+    fetch(jsonPath)
+        .then(response => response.ok ? response.json() : null)
+        .then(data => {
+            if (data) {
+                kitchenItemsCache[kitchen] = data.items || data;
+            } else {
+                kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
+            }
+            // Update select options
+            const items = kitchenItemsCache[kitchen];
+            selectElement.innerHTML = '<option value="">-- Select Item --</option>' + 
+                items.map(item => `<option value='${JSON.stringify(item)}'>${item.code} - ${item.name} (${item.unit})</option>`).join('');
+            showToast(`🔄 ${kitchen} items refreshed`);
+        })
+        .catch(() => {
+            kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
+            showToast(`⚠️ Using default items for ${kitchen}`);
+        });
 }
 
 function getDefaultItemsForKitchen(kitchen) {
@@ -1037,16 +1001,16 @@ async function updateRequest(id, items, completedVia = null) {
     try {
         if(completedVia) items.forEach(item => item.completedVia = completedVia);
         await db.collection("kitchen_requests").doc(id).update({ items });
-        showToast(`✅ Updated by ${currentAdmin}`);
+        showToast(`✅ Updated`);
         await loadRequests();
         return true;
-    } catch(e) { showToast("Update error: " + e.message); return false; }
+    } catch(e) { showToast("Update error"); return false; }
 }
 
-// IMPROVED: Add Missing Item with Price and better UI
+// SIMPLIFIED: Add Missing Item with Select dropdown and price from JSON
 function showAddItemModal(reqId, kitchenSection, requestStatus) {
     if (requestStatus !== "pending") {
-        showToast("❌ Cannot add items to completed orders");
+        showToast("❌ Only pending orders can be edited");
         return;
     }
     
@@ -1056,134 +1020,87 @@ function showAddItemModal(reqId, kitchenSection, requestStatus) {
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <h2>➕ Add Missing Item</h2>
-            <p>Kitchen: <strong>${kitchenSection}</strong> | Status: <span style="color:#f39c12;">Pending</span></p>
-            <div class="search-container">
-                <input type="text" id="itemSearchInput" placeholder="🔍 Search by name or code..." autocomplete="off">
+            <h2>➕ Add Item to Order</h2>
+            <p style="margin-bottom: 15px;">Kitchen: <strong>${kitchenSection}</strong></p>
+            <div class="item-select-wrapper">
+                <select id="itemSelect">
+                    <option value="">-- Select Item --</option>
+                    ${catalog.map(item => `<option value='${JSON.stringify(item)}' data-price="${item.price}" data-max="${item.maxLimit}">${item.code} - ${item.name} (${item.unit}) - ${item.price} EGP</option>`).join('')}
+                </select>
+                <button class="refresh-icon" onclick="refreshKitchenItems('${kitchenSection}', document.getElementById('itemSelect'))" style="position: absolute; right: 10px; top: 10px; background: none; border: none; font-size: 1.2rem; cursor: pointer;">🔄</button>
             </div>
-            <div class="item-list" id="itemList">
-                ${catalog.map(item => `
-                    <div class="item-list-item" data-item='${JSON.stringify(item)}'>
-                        <div class="item-info">
-                            <div class="item-code">${item.code}</div>
-                            <div class="item-name">${escapeHtml(item.name)}</div>
-                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | <span class="price-highlight">${item.price} EGP</span></div>
-                        </div>
-                        <button onclick="quickAddItem('${reqId}', this)">+ Add</button>
-                    </div>
-                `).join('')}
+            <div class="price-preview" id="pricePreview" style="display: none;">
+                📦 Price: <span id="selectedPrice">0</span> EGP / unit<br>
+                ⚠️ Max Limit: <span id="selectedMax">0</span>
             </div>
-            <div style="text-align: center; margin: 15px 0; color: #999;">━━━━━━━━━━━━━━━━━━━━</div>
-            <h3>➕ Create Custom Item</h3>
-            <div class="form-row">
-                <input type="text" id="newItemCode" placeholder="Item Code *" autocomplete="off">
-                <input type="text" id="newItemName" placeholder="Item Name *" autocomplete="off">
-            </div>
-            <div class="form-row">
-                <input type="text" id="newItemUnit" placeholder="Unit (kg, pack, box) *" autocomplete="off">
-                <input type="number" id="newItemPrice" placeholder="Price (EGP) *" step="0.01">
-            </div>
-            <div class="form-row">
-                <input type="number" id="newItemMax" placeholder="Max Limit" value="100">
-                <input type="number" id="newItemQty" placeholder="Qty Requested" value="1" step="0.5">
-            </div>
-            <button onclick="addCustomItemToRequest('${reqId}')" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">✨ Create & Add Custom Item</button>
+            <input type="number" id="itemQty" placeholder="Quantity" value="1" step="0.5" min="0.5">
+            <button id="addItemBtn" style="background: #2ecc71;">➕ Add to Order</button>
             <button class="close-modal" onclick="this.closest('.modal').remove()">Cancel</button>
         </div>
     `;
     document.body.appendChild(modal);
     
-    // Search functionality
-    const searchInput = modal.querySelector('#itemSearchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase();
-            const items = catalog;
-            const filtered = items.filter(i => i.name.toLowerCase().includes(term) || i.code.toLowerCase().includes(term));
-            const list = modal.querySelector('#itemList');
-            if (filtered.length === 0) {
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No items found</div>';
-            } else {
-                list.innerHTML = filtered.map(item => `
-                    <div class="item-list-item" data-item='${JSON.stringify(item)}'>
-                        <div class="item-info">
-                            <div class="item-code">${item.code}</div>
-                            <div class="item-name">${escapeHtml(item.name)}</div>
-                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | <span class="price-highlight">${item.price} EGP</span></div>
-                        </div>
-                        <button onclick="quickAddItem('${reqId}', this)">+ Add</button>
-                    </div>
-                `).join('');
-            }
+    const select = modal.querySelector('#itemSelect');
+    const qtyInput = modal.querySelector('#itemQty');
+    const pricePreview = modal.querySelector('#pricePreview');
+    const selectedPriceSpan = modal.querySelector('#selectedPrice');
+    const selectedMaxSpan = modal.querySelector('#selectedMax');
+    const addBtn = modal.querySelector('#addItemBtn');
+    
+    select.addEventListener('change', function() {
+        if (this.value) {
+            const item = JSON.parse(this.value);
+            selectedPriceSpan.innerText = item.price;
+            selectedMaxSpan.innerText = item.maxLimit;
+            pricePreview.style.display = 'block';
+            qtyInput.max = item.maxLimit;
+            qtyInput.placeholder = `Quantity (max ${item.maxLimit})`;
+        } else {
+            pricePreview.style.display = 'none';
+        }
+    });
+    
+    addBtn.onclick = () => {
+        const selectedValue = select.value;
+        if (!selectedValue) {
+            showToast("Please select an item");
+            return;
+        }
+        const qty = parseFloat(qtyInput.value);
+        if (isNaN(qty) || qty <= 0) {
+            showToast("Please enter valid quantity");
+            return;
+        }
+        const item = JSON.parse(selectedValue);
+        addItemToRequest(reqId, {
+            code: item.code,
+            name: item.name,
+            unit: item.unit,
+            price: item.price,
+            maxLimit: item.maxLimit,
+            originalQty: qty,
+            status: "pending",
+            approvedQty: null
         });
-    }
-}
-
-function quickAddItem(reqId, buttonElement) {
-    const itemDiv = buttonElement.closest('.item-list-item');
-    const itemData = JSON.parse(itemDiv.getAttribute('data-item'));
-    addItemToRequest(reqId, {
-        code: itemData.code,
-        name: itemData.name,
-        unit: itemData.unit,
-        price: itemData.price,
-        maxLimit: itemData.maxLimit,
-        originalQty: 1,
-        status: "pending",
-        approvedQty: null
-    });
-    document.querySelector('.modal')?.remove();
-}
-
-function addCustomItemToRequest(reqId) {
-    const code = document.getElementById('newItemCode')?.value.trim();
-    const name = document.getElementById('newItemName')?.value.trim();
-    const unit = document.getElementById('newItemUnit')?.value.trim();
-    const price = parseFloat(document.getElementById('newItemPrice')?.value);
-    const maxLimit = parseFloat(document.getElementById('newItemMax')?.value);
-    const originalQty = parseFloat(document.getElementById('newItemQty')?.value);
-    
-    if(!code || !name || !unit || isNaN(price) || price <= 0) {
-        showToast("❌ Please fill required fields: Code, Name, Unit, Price");
-        return;
-    }
-    if(isNaN(maxLimit) || maxLimit <= 0) {
-        showToast("⚠️ Max limit must be greater than 0");
-        return;
-    }
-    if(isNaN(originalQty) || originalQty <= 0) {
-        showToast("⚠️ Quantity must be greater than 0");
-        return;
-    }
-    
-    addItemToRequest(reqId, {
-        code: code.toUpperCase(),
-        name: name,
-        unit: unit,
-        price: price,
-        maxLimit: maxLimit,
-        originalQty: originalQty,
-        status: "pending",
-        approvedQty: null
-    });
-    document.querySelector('.modal')?.remove();
+        modal.remove();
+    };
 }
 
 async function addItemToRequest(reqId, newItem) {
     const req = allRequests.find(r => r.id === reqId);
     if(!req) { showToast("Request not found"); return; }
-    if(getRequestStatus(req.items) !== "pending") { showToast("❌ Order already completed"); return; }
+    if(getRequestStatus(req.items) !== "pending") { showToast("Order already completed"); return; }
     
-    const itemToAdd = { ...newItem, status: "pending", approvedQty: null, originalQty: newItem.originalQty || 1 };
+    const itemToAdd = { ...newItem, status: "pending", approvedQty: null, originalQty: newItem.originalQty };
     req.items.push(itemToAdd);
     await updateRequest(reqId, req.items);
-    showToast(`✅ Added ${itemToAdd.name} (${itemToAdd.price} EGP/unit)`);
+    showToast(`✅ Added ${itemToAdd.name} (${itemToAdd.price} EGP)`);
 }
 
 async function approveItem(reqId, idx) {
     const input = document.getElementById(`qty_${reqId}_${idx}`);
     let qty = parseFloat(input?.value || 0);
-    if(isNaN(qty) || qty < 0) { showToast("Enter valid quantity"); return; }
+    if(isNaN(qty) || qty < 0) { showToast("Enter quantity"); return; }
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         const item = req.items[idx];
@@ -1194,12 +1111,12 @@ async function approveItem(reqId, idx) {
         item.approvedBy = currentAdmin;
         item.approvedAt = new Date().toLocaleString();
         await updateRequest(reqId, req.items);
-        showToast(`✅ Approved ${qty} ${item.unit} of ${item.name}`);
+        showToast(`✅ Approved ${qty} ${item.unit}`);
     }
 }
 
 async function rejectItem(reqId, idx) {
-    const reason = prompt(`Rejection reason (${currentAdmin}):`, "Out of stock");
+    const reason = prompt("Rejection reason:", "Out of stock");
     if(reason?.trim()) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
@@ -1209,13 +1126,13 @@ async function rejectItem(reqId, idx) {
             req.items[idx].rejectedAt = new Date().toLocaleString();
             req.items[idx].approvedQty = 0;
             await updateRequest(reqId, req.items);
-            showToast(`❌ Rejected ${req.items[idx].name}`);
+            showToast(`❌ Rejected`);
         }
     }
 }
 
 async function approveAll(reqId) {
-    if(!confirm(`Approve all as ${currentAdmin}?`)) return;
+    if(!confirm(`Approve all items?`)) return;
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         req.items.forEach(item => {
@@ -1226,12 +1143,12 @@ async function approveAll(reqId) {
             delete item.completedVia;
         });
         await updateRequest(reqId, req.items, "approve_all");
-        showToast("✅ All items approved");
+        showToast("✅ All approved");
     }
 }
 
 async function rejectAll(reqId) {
-    const reason = prompt(`Rejection reason for ALL (${currentAdmin}):`, "Not available");
+    const reason = prompt("Rejection reason for ALL:", "Not available");
     if(reason?.trim()) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
@@ -1244,13 +1161,13 @@ async function rejectAll(reqId) {
                 delete item.completedVia;
             });
             await updateRequest(reqId, req.items, "reject_all");
-            showToast("❌ All items rejected");
+            showToast("❌ All rejected");
         }
     }
 }
 
 async function acceptRequest(reqId) {
-    if(!confirm(`Accept this request? It will be locked.`)) return;
+    if(!confirm(`Accept and lock this request?`)) return;
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         req.items.forEach(item => {
@@ -1264,16 +1181,16 @@ async function acceptRequest(reqId) {
             item.completedVia = "accept";
         });
         await updateRequest(reqId, req.items, "accept");
-        showToast("✅ Request accepted and locked");
+        showToast("✅ Request accepted");
     }
 }
 
 function showResetConfirmModal() {
     const toDelete = allRequests.filter(req => getRequestStatus(req.items) !== "pending");
-    if(toDelete.length === 0) { showToast("ℹ️ No completed requests to delete"); return; }
+    if(toDelete.length === 0) { showToast("No completed requests"); return; }
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
-    modal.innerHTML = `<div class="confirm-modal-content"><h3>⚠️ PERMANENT DELETION ⚠️</h3><p>Delete <strong>${toDelete.length}</strong> completed request(s).</p><p class="warning-text">This cannot be undone!</p><p>Type <strong style="color:#e74c3c;">DELETE</strong> to confirm:</p><input type="text" id="confirmDeleteInput" placeholder="Type DELETE" autocomplete="off"><div class="confirm-buttons"><button class="btn-cancel-delete" onclick="this.closest('.confirm-modal').remove()">Cancel</button><button class="btn-confirm-delete" id="confirmDeleteBtn" disabled>Delete</button></div></div>`;
+    modal.innerHTML = `<div class="confirm-modal-content"><h3>⚠️ DELETE ALL</h3><p>Delete <strong>${toDelete.length}</strong> completed requests?</p><p class="warning-text">This cannot be undone!</p><p>Type <strong>DELETE</strong>:</p><input type="text" id="confirmDeleteInput" placeholder="DELETE"><div class="confirm-buttons"><button class="btn-cancel-delete" onclick="this.closest('.confirm-modal').remove()">Cancel</button><button class="btn-confirm-delete" id="confirmDeleteBtn" disabled>Delete</button></div></div>`;
     document.body.appendChild(modal);
     const input = modal.querySelector('#confirmDeleteInput');
     const confirmBtn = modal.querySelector('#confirmDeleteBtn');
@@ -1281,38 +1198,29 @@ function showResetConfirmModal() {
     input.addEventListener('input', e => confirmBtn.disabled = e.target.value !== 'DELETE');
     confirmBtn.onclick = async () => {
         if(input.value === 'DELETE') { modal.remove(); await executeResetCompleted(toDelete); }
-        else { showToast("❌ Incorrect confirmation"); modal.remove(); }
+        else { showToast("Wrong confirmation"); modal.remove(); }
     };
 }
 
 async function executeResetCompleted(toDelete) {
-    let deleted = 0, errors = 0;
-    showToast(`⚠️ Deleting ${toDelete.length} requests...`);
+    let deleted = 0;
     for(const req of toDelete) {
         try { await db.collection("kitchen_requests").doc(req.id).delete(); deleted++; }
-        catch(e) { errors++; }
+        catch(e) {}
     }
     await loadRequests();
-    showToast(errors === 0 ? `✅ Deleted ${deleted} completed requests` : `⚠️ Deleted ${deleted}, ${errors} failed`);
+    showToast(`✅ Deleted ${deleted} requests`);
 }
 
 function exportExcel() {
     if(!allRequests.length) { showToast("No data"); return; }
-    let csv = "Request ID,Kitchen,Chef,Date,Item,Code,Requested Qty,Unit,Price/Unit (EGP),Approved Qty,Status,Action By,Total Value (EGP)\n";
+    let csv = "Request ID,Kitchen,Chef,Date,Item,Code,Qty,Unit,Price,Approved Qty,Status\n";
     allRequests.forEach(req => {
         req.items.forEach(item => {
-            let status = item.status, actionBy = "";
-            const price = item.price || 0;
-            const approvedQty = item.status === "approved" ? (item.approvedQty || 0) : 0;
-            const totalValue = approvedQty * price;
-            if(item.status === "approved") { status = "Approved"; actionBy = item.approvedBy || ""; }
-            else if(item.status === "rejected") { status = "Rejected"; actionBy = item.rejectedBy || ""; }
-            else if(item.completedVia === "accept") { status = "Accepted"; actionBy = item.approvedBy || item.rejectedBy || currentAdmin; }
-            else { status = "Pending"; actionBy = "-"; }
-            csv += `"${req.requestId}","${req.section}","${req.chefName}","${req.submittedAt}","${item.name}","${item.code}",${item.originalQty},"${item.unit}",${price},${approvedQty},"${status}","${actionBy}",${totalValue}\n`;
+            csv += `"${req.requestId}","${req.section}","${req.chefName}","${req.submittedAt}","${item.name}","${item.code}",${item.originalQty},"${item.unit}",${item.price || 0},${item.approvedQty || 0},"${item.status || 'pending'}"\n`;
         });
     });
-    const blob = new Blob(["\uFEFF" + csv], {type: "text/csv;charset=utf-8"});
+    const blob = new Blob(["\uFEFF" + csv], {type: "text/csv"});
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `orders_${Date.now()}.csv`;
@@ -1369,36 +1277,36 @@ function renderUI() {
         else isCompleted = true;
         const canAdd = requestStatus === "pending";
         
-        let itemsHtml = `<div class="table-wrapper"><table class="admin-table"><thead><tr><th>Code</th><th>Item</th><th>Requested Qty</th><th>Unit</th><th>Price/Unit (EGP)</th><th>Approved Qty</th><th>Total Value (EGP)</th><th>Action</th><th>Status</th></tr></thead><tbody>`;
+        let itemsHtml = `<div class="table-wrapper"><table class="admin-table"><thead><tr><th>Code</th><th>Item</th><th>Qty</th><th>Unit</th><th>Price</th><th>Approved</th><th>Total</th><th>Action</th><th>Status</th></tr></thead><tbody>`;
         req.items.forEach((item, idx) => {
             const price = item.price || 0;
             const approvedQty = item.status === "approved" ? (item.approvedQty || 0) : 0;
             const totalValue = approvedQty * price;
             if(item.status === "approved") {
-                itemsHtml += `<tr style="background:#e8f5e9;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td>${approvedQty.toFixed(1)}</td><td><strong style="color:#27ae60;">${totalValue.toFixed(2)}</strong></td><td><span class="btn-approve" style="background:#27ae60;opacity:0.7;cursor:default;">✅ Approved</span></td><td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}<br>📅 ${item.approvedAt || ''}</div></td></tr>`;
+                itemsHtml += `<tr style="background:#e8f5e9;"><td>${item.code}</td><td>${escapeHtml(item.name)}<div class="item-max">Max: ${item.maxLimit}</div></td><td>${item.originalQty}</div></td><td>${item.unit}</td><td>${price.toFixed(2)}</div></td><td>${approvedQty.toFixed(1)}</div></td><td style="color:#27ae60;font-weight:bold;">${totalValue.toFixed(2)}</div></td><td>✅ Approved</td><td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}</div></td></tr>`;
             } else if(item.status === "rejected") {
-                itemsHtml += `<tr style="background:#fee2e2;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><strong style="color:#e74c3c;">0</strong></td><td><strong style="color:#e74c3c;">0.00</strong></td><td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;cursor:default;">❌ Rejected</span></td><td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td></tr>`;
+                itemsHtml += `<tr style="background:#fee2e2;"><td>${item.code}</td><td>${escapeHtml(item.name)}<div class="item-max">Max: ${item.maxLimit}</div></td><td>${item.originalQty}</div></td><td>${item.unit}</td><td>${price.toFixed(2)}</div></td><td>0</div></td><td style="color:#e74c3c;">0.00</div></td><td>❌ Rejected</td><td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">📝 ${escapeHtml(item.rejectionReason || '')}</div></td></tr>`;
             } else {
-                itemsHtml += `<tr><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${item.originalQty}" min="0" step="0.5"></td><td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600; color:#1e3c72;">${(item.originalQty * price).toFixed(2)}</span></td><td class="action-buttons"><button class="btn-approve" onclick="approveItem('${req.id}', ${idx})">✅ Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">❌ Reject</button></td><td><span class="status-pending-cell">Pending</span><div class="admin-info-text">Waiting for approval</div></td></tr>`;
+                itemsHtml += `<tr><td>${item.code}</div><td>${escapeHtml(item.name)}<div class="item-max">Max: ${item.maxLimit}</div></div><td>${item.originalQty}</div><td>${item.unit}</div><td>${price.toFixed(2)}</div><td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${item.originalQty}" step="0.5" style="width:70px;"></div><td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600;">${(item.originalQty * price).toFixed(2)}</span></div><td class="action-buttons"><button class="btn-approve" onclick="approveItem('${req.id}', ${idx})">Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">Reject</button></div></td><td><span class="status-pending-cell">Pending</span></td></tr>`;
             }
         });
-        itemsHtml += `</tbody></table></div>`;
+        itemsHtml += `</tbody>}</div>`;
         
-        let actions = !isCompleted ? `<div class="request-actions"><button class="btn-approve-all" onclick="approveAll('${req.id}')" ${hasIndividual ? 'disabled' : ''}>✅ Approve All</button><button class="btn-reject-all" onclick="rejectAll('${req.id}')" ${hasIndividual ? 'disabled' : ''}>❌ Reject All</button><button class="btn-accept" onclick="acceptRequest('${req.id}')" ${!hasIndividual ? 'disabled' : ''}>🟣 Accept</button><button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAdd ? 'disabled' : ''}>➕ Add Missing Item</button></div>` : `<div class="request-actions"><button class="btn-accept" style="background:#6c757d;cursor:default;" disabled>✅ Completed - Locked</button></div>`;
+        let actions = !isCompleted ? `<div class="request-actions"><button class="btn-approve-all" onclick="approveAll('${req.id}')" ${hasIndividual ? 'disabled' : ''}>✅ Approve All</button><button class="btn-reject-all" onclick="rejectAll('${req.id}')" ${hasIndividual ? 'disabled' : ''}>❌ Reject All</button><button class="btn-accept" onclick="acceptRequest('${req.id}')" ${!hasIndividual ? 'disabled' : ''}>🟣 Accept</button><button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAdd ? 'disabled' : ''}>➕ Add Item</button></div>` : `<div class="request-actions"><button class="btn-accept" style="background:#6c757d;cursor:default;" disabled>✅ Completed - Locked</button></div>`;
         
         let statusText = { pending:"Pending", approved:"Fully Approved", rejected:"Rejected", accepted:"Accepted" }[requestStatus] || "Pending";
         let statusClass = { pending:"status-pending", approved:"status-approved", rejected:"status-rejected", accepted:"status-accepted" }[requestStatus] || "status-pending";
         
-        container.innerHTML += `<div class="request-card"><div class="request-header"><div><span class="request-id">📄 ${req.requestId}</span><span class="kitchen-badge ${kitchenClass}" style="margin-left:10px;">${req.section}</span></div><div class="request-total-badge"><span>💰 Requested: ${requestedTotal.toFixed(2)} EGP</span><span>✅ Approved: ${approvedTotal.toFixed(2)} EGP</span></div><span class="status-badge ${statusClass}">${statusText}</span></div><div class="request-info"><div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div><div class="info-item"><div class="info-label">📅 SUBMITTED</div><div class="info-value">${req.submittedAt}</div></div><button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAdd ? 'disabled' : ''}>➕ Add Missing Item</button></div>${itemsHtml}${actions}</div>`;
+        container.innerHTML += `<div class="request-card"><div class="request-header"><div><span class="request-id">📄 ${req.requestId}</span><span class="kitchen-badge ${kitchenClass}" style="margin-left:10px;">${req.section}</span></div><div class="request-total-badge"><span>💰 ${requestedTotal.toFixed(2)} EGP</span><span>✅ ${approvedTotal.toFixed(2)} EGP</span></div><span class="status-badge ${statusClass}">${statusText}</span></div><div class="request-info"><div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div><div class="info-item"><div class="info-label">📅 DATE</div><div class="info-value">${req.submittedAt}</div></div><button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAdd ? 'disabled' : ''}>➕ Add Item</button></div>${itemsHtml}${actions}</div>`;
     });
     updateStats();
 }
 
 function logout() {
-    if(confirm("Logout?")) { localStorage.removeItem("admin"); sessionStorage.clear(); window.location.href = "index.html"; }
+    if(confirm("Logout?")) { localStorage.removeItem("admin"); window.location.href = "index.html"; }
 }
 function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
-function showToast(msg) { const t = document.createElement("div"); t.className = "toast"; t.innerText = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
+function showToast(msg) { const t = document.createElement("div"); t.className = "toast"; t.innerText = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2000); }
 
 const saved = localStorage.getItem("admin");
 if(saved && ADMIN_PASSWORDS[saved]) {
