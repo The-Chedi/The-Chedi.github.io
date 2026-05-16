@@ -86,10 +86,6 @@ body {
     background: #e74c3c;
 }
 
-.btn-add-item {
-    background: #2ecc71;
-}
-
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -282,6 +278,11 @@ body {
 
 .btn-add-missing:hover {
     background: #27ae60;
+}
+
+.btn-add-missing:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
 }
 
 .table-wrapper {
@@ -535,9 +536,9 @@ body {
     padding: 30px;
     border-radius: 24px;
     text-align: center;
-    max-width: 500px;
+    max-width: 550px;
     width: 90%;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
 }
 
@@ -703,21 +704,78 @@ body {
     background: #7f8c8d;
 }
 
-.item-select-row {
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 30px;
+    font-size: 14px;
+    text-align: left;
+    padding-left: 40px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+    background-repeat: no-repeat;
+    background-position: 15px center;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.item-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 15px 0;
+    border: 1px solid #eee;
+    border-radius: 12px;
+}
+
+.item-list-item {
     display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
+    justify-content: space-between;
     align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.item-select-row select {
-    flex: 2;
-    margin-bottom: 0;
+.item-list-item:hover {
+    background: #f0f8ff;
 }
 
-.item-select-row button {
+.item-list-item .item-info {
     flex: 1;
-    margin-top: 0;
+}
+
+.item-list-item .item-code {
+    font-size: 0.7rem;
+    color: #666;
+}
+
+.item-list-item .item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.item-list-item .item-details {
+    font-size: 0.7rem;
+    color: #888;
+}
+
+.item-list-item button {
+    background: #2ecc71;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.7rem;
+    cursor: pointer;
 }
 
 @media (max-width: 768px) {
@@ -839,44 +897,23 @@ body {
 </div>
 
 <script>
-// Updated admin passwords including Nader
+// Admin passwords including Nader
 const ADMIN_PASSWORDS = { "Marco": "M1r50123", "Nady": "Nn639123", "Ahmed": "j1cadm1n", "Nader": "Nader123" };
 const KITCHENS = ["Hot Kitchen", "Cold Kitchen", "Pastry / Bakery", "Butchery", "Beach House", "Nihon Kitchen", "Staff Kitchen"];
 
-// Kitchen-specific item catalogs (you can load from JSON files or use this as fallback)
-const KITCHEN_ITEMS_CATALOG = {
-    "Hot Kitchen": [
-        { code: "HK001", name: "Chicken Breast", unit: "kg", defaultMax: 50, price: 120 },
-        { code: "HK002", name: "Beef Striploin", unit: "kg", defaultMax: 30, price: 250 },
-        { code: "HK003", name: "Rice Basmati", unit: "kg", defaultMax: 100, price: 45 }
-    ],
-    "Cold Kitchen": [
-        { code: "CK001", name: "Pine Nut", unit: "kg", defaultMax: 10, price: 350 },
-        { code: "CK002", name: "Lettuce", unit: "kg", defaultMax: 20, price: 30 },
-        { code: "CK003", name: "Tomatoes", unit: "kg", defaultMax: 30, price: 25 }
-    ],
-    "Pastry / Bakery": [
-        { code: "PB001", name: "Glucose", unit: "kg", defaultMax: 15, price: 80 },
-        { code: "PB002", name: "Flour", unit: "kg", defaultMax: 100, price: 35 },
-        { code: "PB003", name: "Butter", unit: "kg", defaultMax: 40, price: 180 }
-    ],
-    "Butchery": [
-        { code: "BT001", name: "Crabs Whole Frozen", unit: "kg", defaultMax: 25, price: 150 },
-        { code: "BT002", name: "Lamb Chops", unit: "kg", defaultMax: 20, price: 220 }
-    ],
-    "Beach House": [
-        { code: "BH001", name: "Fish Fillet", unit: "kg", defaultMax: 30, price: 130 },
-        { code: "BH002", name: "Shrimp", unit: "kg", defaultMax: 20, price: 180 }
-    ],
-    "Nihon Kitchen": [
-        { code: "NK001", name: "Sushi Rice", unit: "kg", defaultMax: 25, price: 95 },
-        { code: "NK002", name: "Nori Seaweed", unit: "pack", defaultMax: 50, price: 45 }
-    ],
-    "Staff Kitchen": [
-        { code: "SK001", name: "Staff Meal Rice", unit: "kg", defaultMax: 60, price: 40 },
-        { code: "SK002", name: "Staff Meal Chicken", unit: "kg", defaultMax: 40, price: 100 }
-    ]
+// Mapping kitchen names to JSON file paths
+const KITCHEN_JSON_FILES = {
+    "Hot Kitchen": "items/hot-kitchen.json",
+    "Cold Kitchen": "items/cold-kitchen.json",
+    "Pastry / Bakery": "items/pastry.json",
+    "Butchery": "items/butchery.json",
+    "Beach House": "items/beach-house.json",
+    "Nihon Kitchen": "items/nihon-kitchen.json",
+    "Staff Kitchen": "items/staff-kitchen.json"
 };
+
+// Store loaded items per kitchen
+let kitchenItemsCache = {};
 
 let currentAdmin = "";
 let currentKitchen = "all";
@@ -911,10 +948,70 @@ function checkLogin() {
         document.getElementById("passwordModal").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
         localStorage.setItem("admin", currentAdmin);
+        loadKitchenItems();
         loadRequests();
     } else {
         document.getElementById("loginError").innerHTML = "❌ Wrong password!";
     }
+}
+
+// Load items from JSON files for each kitchen
+async function loadKitchenItems() {
+    for (const kitchen of KITCHENS) {
+        const jsonPath = KITCHEN_JSON_FILES[kitchen];
+        try {
+            const response = await fetch(jsonPath);
+            if (response.ok) {
+                const data = await response.json();
+                kitchenItemsCache[kitchen] = data.items || data;
+                console.log(`Loaded ${kitchenItemsCache[kitchen].length} items for ${kitchen}`);
+            } else {
+                // Fallback to default items if JSON not found
+                kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
+                console.warn(`Using default items for ${kitchen}`);
+            }
+        } catch(e) {
+            kitchenItemsCache[kitchen] = getDefaultItemsForKitchen(kitchen);
+            console.warn(`Error loading ${jsonPath}, using defaults:`, e);
+        }
+    }
+}
+
+function getDefaultItemsForKitchen(kitchen) {
+    const defaults = {
+        "Hot Kitchen": [
+            { code: "HK001", name: "Chicken Breast", unit: "kg", maxLimit: 50, price: 120 },
+            { code: "HK002", name: "Beef Striploin", unit: "kg", maxLimit: 30, price: 250 },
+            { code: "HK003", name: "Rice Basmati", unit: "kg", maxLimit: 100, price: 45 }
+        ],
+        "Cold Kitchen": [
+            { code: "CK001", name: "Pine Nut", unit: "kg", maxLimit: 10, price: 350 },
+            { code: "CK002", name: "Lettuce", unit: "kg", maxLimit: 20, price: 30 },
+            { code: "CK003", name: "Tomatoes", unit: "kg", maxLimit: 30, price: 25 }
+        ],
+        "Pastry / Bakery": [
+            { code: "PB001", name: "Glucose", unit: "kg", maxLimit: 15, price: 80 },
+            { code: "PB002", name: "Flour", unit: "kg", maxLimit: 100, price: 35 },
+            { code: "PB003", name: "Butter", unit: "kg", maxLimit: 40, price: 180 }
+        ],
+        "Butchery": [
+            { code: "BT001", name: "Crabs Whole Frozen", unit: "kg", maxLimit: 25, price: 150 },
+            { code: "BT002", name: "Lamb Chops", unit: "kg", maxLimit: 20, price: 220 }
+        ],
+        "Beach House": [
+            { code: "BH001", name: "Fish Fillet", unit: "kg", maxLimit: 30, price: 130 },
+            { code: "BH002", name: "Shrimp", unit: "kg", maxLimit: 20, price: 180 }
+        ],
+        "Nihon Kitchen": [
+            { code: "NK001", name: "Sushi Rice", unit: "kg", maxLimit: 25, price: 95 },
+            { code: "NK002", name: "Nori Seaweed", unit: "pack", maxLimit: 50, price: 45 }
+        ],
+        "Staff Kitchen": [
+            { code: "SK001", name: "Staff Meal Rice", unit: "kg", maxLimit: 60, price: 40 },
+            { code: "SK002", name: "Staff Meal Chicken", unit: "kg", maxLimit: 40, price: 100 }
+        ]
+    };
+    return defaults[kitchen] || [];
 }
 
 async function loadRequests() {
@@ -924,7 +1021,7 @@ async function loadRequests() {
         snapshot.forEach(doc => allRequests.push({ id: doc.id, ...doc.data() }));
         renderUI();
         updateStats();
-    } catch(e) { showToast("Error loading"); }
+    } catch(e) { showToast("Error loading: " + e.message); }
 }
 
 function getRequestStatus(items) {
@@ -965,9 +1062,15 @@ async function updateRequest(id, items, completedVia = null) {
     } catch(e) { showToast("Update error: " + e.message); return false; }
 }
 
-// Function to add a missing item to a request
-function showAddItemModal(reqId, kitchenSection) {
-    const catalog = KITCHEN_ITEMS_CATALOG[kitchenSection] || [];
+// Show add item modal with search functionality - ONLY for pending orders
+function showAddItemModal(reqId, kitchenSection, requestStatus) {
+    // CRITICAL: Only allow adding items to PENDING orders
+    if (requestStatus !== "pending") {
+        showToast("❌ Cannot add items to completed orders (Approved, Rejected, or Accepted)");
+        return;
+    }
+    
+    const catalog = kitchenItemsCache[kitchenSection] || [];
     
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -975,12 +1078,20 @@ function showAddItemModal(reqId, kitchenSection) {
         <div class="modal-content">
             <h2>➕ Add Missing Item</h2>
             <p>Kitchen: <strong>${kitchenSection}</strong></p>
-            <div class="item-select-row">
-                <select id="catalogItemSelect">
-                    <option value="">-- Select from catalog --</option>
-                    ${catalog.map(item => `<option value='${JSON.stringify(item)}'>${item.code} - ${item.name} (${item.unit}) - ${item.price} EGP</option>`).join('')}
-                </select>
-                <button onclick="addSelectedCatalogItem('${reqId}')">Add</button>
+            <div class="search-container">
+                <input type="text" id="itemSearchInput" placeholder="🔍 Search by name or code..." autocomplete="off">
+            </div>
+            <div class="item-list" id="itemList">
+                ${catalog.map(item => `
+                    <div class="item-list-item" onclick="quickAddItem('${reqId}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                        <div class="item-info">
+                            <div class="item-code">${item.code}</div>
+                            <div class="item-name">${escapeHtml(item.name)}</div>
+                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | ${item.price} EGP</div>
+                        </div>
+                        <button>+ Add</button>
+                    </div>
+                `).join('')}
             </div>
             <div style="text-align: center; margin: 10px 0;">OR</div>
             <input type="text" id="newItemCode" placeholder="Item Code (e.g., HK099)">
@@ -994,27 +1105,50 @@ function showAddItemModal(reqId, kitchenSection) {
         </div>
     `;
     document.body.appendChild(modal);
+    
+    // Add search functionality
+    const searchInput = modal.querySelector('#itemSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const items = catalog;
+            const filteredItems = items.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) || 
+                item.code.toLowerCase().includes(searchTerm)
+            );
+            const itemList = modal.querySelector('#itemList');
+            if (filteredItems.length === 0) {
+                itemList.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No items found</div>';
+            } else {
+                itemList.innerHTML = filteredItems.map(item => `
+                    <div class="item-list-item" onclick="quickAddItem('${reqId}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                        <div class="item-info">
+                            <div class="item-code">${item.code}</div>
+                            <div class="item-name">${escapeHtml(item.name)}</div>
+                            <div class="item-details">${item.unit} | Max: ${item.maxLimit} | ${item.price} EGP</div>
+                        </div>
+                        <button>+ Add</button>
+                    </div>
+                `).join('');
+            }
+        });
+    }
 }
 
-function addSelectedCatalogItem(reqId) {
-    const select = document.getElementById('catalogItemSelect');
-    const selectedValue = select.value;
-    if(!selectedValue) {
-        showToast("Please select an item");
-        return;
-    }
-    const item = JSON.parse(selectedValue);
+// Quick add from search results
+function quickAddItem(reqId, item) {
     addItemToRequest(reqId, {
         code: item.code,
         name: item.name,
         unit: item.unit,
         price: item.price,
-        maxLimit: item.defaultMax,
+        maxLimit: item.maxLimit,
         originalQty: 1,
         status: "pending",
         approvedQty: null
     });
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addCustomItemToRequest(reqId) {
@@ -1050,7 +1184,13 @@ async function addItemToRequest(reqId, newItem) {
         return;
     }
     
-    // Initialize item structure
+    // Double-check: Only allow adding to pending orders
+    const currentStatus = getRequestStatus(req.items);
+    if (currentStatus !== "pending") {
+        showToast("❌ Cannot add items - order is already completed");
+        return;
+    }
+    
     const itemToAdd = {
         ...newItem,
         status: "pending",
@@ -1063,7 +1203,6 @@ async function addItemToRequest(reqId, newItem) {
     showToast(`✅ Added ${itemToAdd.name} to request`);
 }
 
-// Fixed approve function - now properly handles quantity changes
 async function approveItem(reqId, idx) {
     const input = document.getElementById(`qty_${reqId}_${idx}`);
     let qty = parseFloat(input?.value || 0);
@@ -1077,8 +1216,6 @@ async function approveItem(reqId, idx) {
     if(req) {
         const item = req.items[idx];
         
-        // Allow any quantity - admin has full control
-        // Just show warning if exceeding max limit or requested qty
         if(qty > item.maxLimit) { 
             if(!confirm(`⚠️ Warning: ${qty} exceeds max limit (${item.maxLimit}). Continue anyway?`)) {
                 return;
@@ -1358,6 +1495,9 @@ function renderUI() {
             isCompleted = true;
         }
         
+        // Only allow adding items if status is pending
+        const canAddItems = (requestStatus === "pending");
+        
         let itemsHtml = `<div class="table-wrapper"><table class="admin-table"><thead>
             <tr><th>Code</th><th>Item</th><th>Requested Qty</th><th>Unit</th><th>Price/Unit (EGP)</th><th>Approved Qty</th><th>Total Value (EGP)</th><th>Action</th><th>Status</th>
         </thead><tbody>`;
@@ -1390,7 +1530,7 @@ function renderUI() {
                     <td><strong style="color:#e74c3c;">0.00</strong></td>
                     <td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;cursor:default;">❌ Rejected</span></td>
                     <td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td>
-                </tr>`;
+                <tr>`;
             } else {
                 itemsHtml += `<tr>
                     <td>${item.code}</td>
@@ -1413,7 +1553,7 @@ function renderUI() {
                 <button class="btn-approve-all" id="approveAllBtn_${req.id}" onclick="approveAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>✅ Approve All</button>
                 <button class="btn-reject-all" id="rejectAllBtn_${req.id}" onclick="rejectAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>❌ Reject All</button>
                 <button class="btn-accept" id="acceptBtn_${req.id}" onclick="acceptRequest('${req.id}')" ${!hasIndividualAction ? 'disabled' : ''}>🟣 Accept (Complete)</button>
-                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}')">➕ Add Missing Item</button>
+                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAddItems ? 'disabled' : ''}>➕ Add Missing Item</button>
             </div>`;
         } else {
             actions = `<div class="request-actions"><button class="btn-accept" style="background:#6c757d; cursor:default;" disabled>✅ Request Completed - Locked</button></div>`;
@@ -1437,7 +1577,7 @@ function renderUI() {
             <div class="request-info">
                 <div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div>
                 <div class="info-item"><div class="info-label">📅 SUBMITTED</div><div class="info-value">${req.submittedAt}</div></div>
-                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}')">➕ Add Missing Item</button>
+                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}', '${requestStatus}')" ${!canAddItems ? 'disabled' : ''}>➕ Add Missing Item</button>
             </div>
             ${itemsHtml}
             ${actions}
@@ -1467,6 +1607,7 @@ if(saved && ADMIN_PASSWORDS[saved]) {
     document.getElementById("adminNameDisplay").innerText = currentAdmin;
     document.getElementById("passwordModal").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
+    loadKitchenItems();
     loadRequests();
 }
 </script>
