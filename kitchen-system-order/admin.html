@@ -86,6 +86,10 @@ body {
     background: #e74c3c;
 }
 
+.btn-add-item {
+    background: #2ecc71;
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -244,6 +248,8 @@ body {
     background: white;
     border-bottom: 1px solid #f0f0f0;
     flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .info-item {
@@ -261,6 +267,21 @@ body {
     font-weight: 600;
     font-size: 0.85rem;
     margin-top: 3px;
+}
+
+.btn-add-missing {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+.btn-add-missing:hover {
+    background: #27ae60;
 }
 
 .table-wrapper {
@@ -495,21 +516,6 @@ body {
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.floating-refresh {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #3498db;
-    color: white;
-    border: none;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    font-size: 1.2rem;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
 .modal {
     display: flex;
     position: fixed;
@@ -529,13 +535,20 @@ body {
     padding: 30px;
     border-radius: 24px;
     text-align: center;
-    max-width: 360px;
+    max-width: 500px;
     width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .modal-content h2 {
     margin-bottom: 15px;
     color: #1e3c72;
+}
+
+.modal-content h3 {
+    margin: 15px 0 10px;
+    color: #2c3e50;
 }
 
 .user-selector {
@@ -566,14 +579,13 @@ body {
     margin-top: 3px;
 }
 
-.modal-content input {
+.modal-content input, .modal-content select {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
+    padding: 10px;
+    margin-bottom: 12px;
     border: 1px solid #ddd;
-    border-radius: 40px;
+    border-radius: 8px;
     font-size: 14px;
-    text-align: center;
 }
 
 .modal-content button {
@@ -586,6 +598,7 @@ body {
     cursor: pointer;
     width: 100%;
     font-size: 1rem;
+    margin-top: 8px;
 }
 
 .error-msg {
@@ -603,7 +616,6 @@ body {
     background: #7f8c8d;
 }
 
-/* Confirmation Modal Styles */
 .confirm-modal {
     display: flex;
     position: fixed;
@@ -691,6 +703,23 @@ body {
     background: #7f8c8d;
 }
 
+.item-select-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.item-select-row select {
+    flex: 2;
+    margin-bottom: 0;
+}
+
+.item-select-row button {
+    flex: 1;
+    margin-top: 0;
+}
+
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -763,6 +792,7 @@ body {
             <button class="user-btn" onclick="selectUser('Marco')">👨‍💼 Marco<br><span class="user-title">Administrator</span></button>
             <button class="user-btn" onclick="selectUser('Nady')">👩‍💼 Nady<br><span class="user-title">Administrator</span></button>
             <button class="user-btn" onclick="selectUser('Ahmed')">👨‍💻 Ahmed<br><span class="user-title">Administrator</span></button>
+            <button class="user-btn" onclick="selectUser('Nader')">👨‍💼 Nader<br><span class="user-title">Administrator</span></button>
         </div>
         <input type="password" id="passwordInput" placeholder="Enter password" style="display:none;">
         <button id="loginBtn" style="display:none;" onclick="checkLogin()">Login</button>
@@ -809,8 +839,44 @@ body {
 </div>
 
 <script>
-const ADMIN_PASSWORDS = { "Marco": "M1r50123", "Nady": "Nn639123", "Ahmed": "j1cadm1n" };
+// Updated admin passwords including Nader
+const ADMIN_PASSWORDS = { "Marco": "M1r50123", "Nady": "Nn639123", "Ahmed": "j1cadm1n", "Nader": "Nader123" };
 const KITCHENS = ["Hot Kitchen", "Cold Kitchen", "Pastry / Bakery", "Butchery", "Beach House", "Nihon Kitchen", "Staff Kitchen"];
+
+// Kitchen-specific item catalogs (you can load from JSON files or use this as fallback)
+const KITCHEN_ITEMS_CATALOG = {
+    "Hot Kitchen": [
+        { code: "HK001", name: "Chicken Breast", unit: "kg", defaultMax: 50, price: 120 },
+        { code: "HK002", name: "Beef Striploin", unit: "kg", defaultMax: 30, price: 250 },
+        { code: "HK003", name: "Rice Basmati", unit: "kg", defaultMax: 100, price: 45 }
+    ],
+    "Cold Kitchen": [
+        { code: "CK001", name: "Pine Nut", unit: "kg", defaultMax: 10, price: 350 },
+        { code: "CK002", name: "Lettuce", unit: "kg", defaultMax: 20, price: 30 },
+        { code: "CK003", name: "Tomatoes", unit: "kg", defaultMax: 30, price: 25 }
+    ],
+    "Pastry / Bakery": [
+        { code: "PB001", name: "Glucose", unit: "kg", defaultMax: 15, price: 80 },
+        { code: "PB002", name: "Flour", unit: "kg", defaultMax: 100, price: 35 },
+        { code: "PB003", name: "Butter", unit: "kg", defaultMax: 40, price: 180 }
+    ],
+    "Butchery": [
+        { code: "BT001", name: "Crabs Whole Frozen", unit: "kg", defaultMax: 25, price: 150 },
+        { code: "BT002", name: "Lamb Chops", unit: "kg", defaultMax: 20, price: 220 }
+    ],
+    "Beach House": [
+        { code: "BH001", name: "Fish Fillet", unit: "kg", defaultMax: 30, price: 130 },
+        { code: "BH002", name: "Shrimp", unit: "kg", defaultMax: 20, price: 180 }
+    ],
+    "Nihon Kitchen": [
+        { code: "NK001", name: "Sushi Rice", unit: "kg", defaultMax: 25, price: 95 },
+        { code: "NK002", name: "Nori Seaweed", unit: "pack", defaultMax: 50, price: 45 }
+    ],
+    "Staff Kitchen": [
+        { code: "SK001", name: "Staff Meal Rice", unit: "kg", defaultMax: 60, price: 40 },
+        { code: "SK002", name: "Staff Meal Chicken", unit: "kg", defaultMax: 40, price: 100 }
+    ]
+};
 
 let currentAdmin = "";
 let currentKitchen = "all";
@@ -866,7 +932,6 @@ function getRequestStatus(items) {
     let allProcessed = true;
     let approved = 0;
     let rejected = 0;
-    let accepted = false;
     
     items.forEach(item => {
         if(item.status === "approved") approved++;
@@ -897,33 +962,146 @@ async function updateRequest(id, items, completedVia = null) {
         showToast(`✅ Updated by ${currentAdmin}`);
         await loadRequests();
         return true;
-    } catch(e) { showToast("Update error"); return false; }
+    } catch(e) { showToast("Update error: " + e.message); return false; }
 }
 
+// Function to add a missing item to a request
+function showAddItemModal(reqId, kitchenSection) {
+    const catalog = KITCHEN_ITEMS_CATALOG[kitchenSection] || [];
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>➕ Add Missing Item</h2>
+            <p>Kitchen: <strong>${kitchenSection}</strong></p>
+            <div class="item-select-row">
+                <select id="catalogItemSelect">
+                    <option value="">-- Select from catalog --</option>
+                    ${catalog.map(item => `<option value='${JSON.stringify(item)}'>${item.code} - ${item.name} (${item.unit}) - ${item.price} EGP</option>`).join('')}
+                </select>
+                <button onclick="addSelectedCatalogItem('${reqId}')">Add</button>
+            </div>
+            <div style="text-align: center; margin: 10px 0;">OR</div>
+            <input type="text" id="newItemCode" placeholder="Item Code (e.g., HK099)">
+            <input type="text" id="newItemName" placeholder="Item Name">
+            <input type="text" id="newItemUnit" placeholder="Unit (kg, pack, box)">
+            <input type="number" id="newItemPrice" placeholder="Price per unit (EGP)" step="0.01">
+            <input type="number" id="newItemMax" placeholder="Max Limit" value="100">
+            <input type="number" id="newItemQty" placeholder="Requested Quantity" value="1" step="0.5">
+            <button onclick="addCustomItemToRequest('${reqId}')">➕ Add Custom Item</button>
+            <button class="close-modal" onclick="this.closest('.modal').remove()">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function addSelectedCatalogItem(reqId) {
+    const select = document.getElementById('catalogItemSelect');
+    const selectedValue = select.value;
+    if(!selectedValue) {
+        showToast("Please select an item");
+        return;
+    }
+    const item = JSON.parse(selectedValue);
+    addItemToRequest(reqId, {
+        code: item.code,
+        name: item.name,
+        unit: item.unit,
+        price: item.price,
+        maxLimit: item.defaultMax,
+        originalQty: 1,
+        status: "pending",
+        approvedQty: null
+    });
+    document.querySelector('.modal').remove();
+}
+
+function addCustomItemToRequest(reqId) {
+    const code = document.getElementById('newItemCode')?.value.trim();
+    const name = document.getElementById('newItemName')?.value.trim();
+    const unit = document.getElementById('newItemUnit')?.value.trim();
+    const price = parseFloat(document.getElementById('newItemPrice')?.value);
+    const maxLimit = parseFloat(document.getElementById('newItemMax')?.value);
+    const originalQty = parseFloat(document.getElementById('newItemQty')?.value);
+    
+    if(!code || !name || !unit || isNaN(price) || isNaN(maxLimit) || isNaN(originalQty)) {
+        showToast("Please fill all fields correctly");
+        return;
+    }
+    
+    addItemToRequest(reqId, {
+        code: code,
+        name: name,
+        unit: unit,
+        price: price,
+        maxLimit: maxLimit,
+        originalQty: originalQty,
+        status: "pending",
+        approvedQty: null
+    });
+    document.querySelector('.modal').remove();
+}
+
+async function addItemToRequest(reqId, newItem) {
+    const req = allRequests.find(r => r.id === reqId);
+    if(!req) {
+        showToast("Request not found");
+        return;
+    }
+    
+    // Initialize item structure
+    const itemToAdd = {
+        ...newItem,
+        status: "pending",
+        approvedQty: null,
+        originalQty: newItem.originalQty || 1
+    };
+    
+    req.items.push(itemToAdd);
+    await updateRequest(reqId, req.items);
+    showToast(`✅ Added ${itemToAdd.name} to request`);
+}
+
+// Fixed approve function - now properly handles quantity changes
 async function approveItem(reqId, idx) {
     const input = document.getElementById(`qty_${reqId}_${idx}`);
     let qty = parseFloat(input?.value || 0);
-    if(!qty || qty <= 0) { showToast("Enter quantity"); return; }
+    
+    if(isNaN(qty) || qty < 0) { 
+        showToast("Enter valid quantity"); 
+        return; 
+    }
+    
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         const item = req.items[idx];
-        if(qty > item.maxLimit) { showToast(`Max ${item.maxLimit}`); return; }
-        if(qty > item.originalQty) { 
-            showToast(`⚠️ Cannot approve more than requested (${item.originalQty} ${item.unit})`);
-            input.value = item.originalQty;
-            return;
+        
+        // Allow any quantity - admin has full control
+        // Just show warning if exceeding max limit or requested qty
+        if(qty > item.maxLimit) { 
+            if(!confirm(`⚠️ Warning: ${qty} exceeds max limit (${item.maxLimit}). Continue anyway?`)) {
+                return;
+            }
         }
+        if(qty > item.originalQty) { 
+            if(!confirm(`⚠️ Warning: ${qty} exceeds requested quantity (${item.originalQty}). Continue anyway?`)) {
+                return;
+            }
+        }
+        
         item.status = "approved";
         item.approvedQty = qty;
         item.approvedBy = currentAdmin;
         item.approvedAt = new Date().toLocaleString();
         await updateRequest(reqId, req.items);
+        showToast(`✅ Approved ${qty} ${item.unit} of ${item.name}`);
     }
 }
 
 async function rejectItem(reqId, idx) {
     const reason = prompt(`Rejection reason (${currentAdmin}):`, "Out of stock");
-    if(reason) {
+    if(reason && reason.trim()) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
             req.items[idx].status = "rejected";
@@ -932,17 +1110,17 @@ async function rejectItem(reqId, idx) {
             req.items[idx].rejectedAt = new Date().toLocaleString();
             req.items[idx].approvedQty = 0;
             await updateRequest(reqId, req.items);
+            showToast(`❌ Rejected ${req.items[idx].name}`);
         }
     }
 }
 
 async function approveAll(reqId) {
-    if(!confirm(`Approve all as ${currentAdmin}? This will complete the request.`)) return;
+    if(!confirm(`Approve all as ${currentAdmin}?`)) return;
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         req.items.forEach(item => {
             let qty = item.originalQty;
-            if(qty > item.maxLimit) qty = item.maxLimit;
             item.status = "approved";
             item.approvedQty = qty;
             item.approvedBy = currentAdmin;
@@ -950,12 +1128,13 @@ async function approveAll(reqId) {
             delete item.completedVia;
         });
         await updateRequest(reqId, req.items, "approve_all");
+        showToast("✅ All items approved");
     }
 }
 
 async function rejectAll(reqId) {
     const reason = prompt(`Rejection reason for ALL (${currentAdmin}):`, "Not available");
-    if(reason) {
+    if(reason && reason.trim()) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
             req.items.forEach(item => {
@@ -967,6 +1146,7 @@ async function rejectAll(reqId) {
                 delete item.completedVia;
             });
             await updateRequest(reqId, req.items, "reject_all");
+            showToast("❌ All items rejected");
         }
     }
 }
@@ -986,10 +1166,10 @@ async function acceptRequest(reqId) {
             item.completedVia = "accept";
         });
         await updateRequest(reqId, req.items, "accept");
+        showToast("✅ Request accepted and locked");
     }
 }
 
-// Show confirmation modal that requires typing "DELETE"
 function showResetConfirmModal() {
     const toDelete = allRequests.filter(req => {
         const status = getRequestStatus(req.items);
@@ -1001,7 +1181,6 @@ function showResetConfirmModal() {
         return;
     }
     
-    // Create modal
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
     modal.innerHTML = `
@@ -1189,32 +1368,44 @@ function renderUI() {
             const totalValue = approvedQty * price;
             
             if(item.status === "approved") {
-                itemsHtml += `<tr style="background:#e8f5e9;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td>${approvedQty.toFixed(1)}</td><td><strong style="color:#27ae60;">${totalValue.toFixed(2)}</strong></td><td><span class="btn-approve" style="background:#27ae60;opacity:0.7;cursor:default;">✅ Approved</span></td><td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}<br>📅 ${item.approvedAt || ''}</div></td></tr>`;
+                itemsHtml += `<tr style="background:#e8f5e9;">
+                    <td>${item.code}</td>
+                    <td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td>
+                    <td><span class="requested-qty">${item.originalQty}</span></td>
+                    <td>${item.unit}</td>
+                    <td><span class="item-price">${price.toFixed(2)}</span></td>
+                    <td>${approvedQty.toFixed(1)}</div></td>
+                    <td><strong style="color:#27ae60;">${totalValue.toFixed(2)}</strong></td>
+                    <td><span class="btn-approve" style="background:#27ae60;opacity:0.7;cursor:default;">✅ Approved</span></td>
+                    <td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}<br>📅 ${item.approvedAt || ''}</div></td>
+                </tr>`;
             } else if(item.status === "rejected") {
-                itemsHtml += `<tr style="background:#fee2e2;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><strong style="color:#e74c3c;">0</strong></td><td><strong style="color:#e74c3c;">0.00</strong></td><td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;cursor:default;">❌ Rejected</span></td><td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td></tr>`;
+                itemsHtml += `<tr style="background:#fee2e2;">
+                    <td>${item.code}</td>
+                    <td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td>
+                    <td><span class="requested-qty">${item.originalQty}</span></td>
+                    <td>${item.unit}</td>
+                    <td><span class="item-price">${price.toFixed(2)}</span></td>
+                    <td><strong style="color:#e74c3c;">0</strong></td>
+                    <td><strong style="color:#e74c3c;">0.00</strong></td>
+                    <td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;cursor:default;">❌ Rejected</span></td>
+                    <td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td>
+                </tr>`;
             } else {
-                itemsHtml += `<tr><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${item.originalQty}" min="0" max="${item.maxLimit}" step="0.5"></td><td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600; color:#1e3c72;">${(item.originalQty * price).toFixed(2)}</span></td><td class="action-buttons"><button class="btn-approve" onclick="approveItem('${req.id}', ${idx})">✅ Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">❌ Reject</button></td><td><span class="status-pending-cell">Pending</span><div class="admin-info-text">Waiting for approval</div></td></tr>`;
-                
-                setTimeout(() => {
-                    const input = document.getElementById(`qty_${req.id}_${idx}`);
-                    const totalSpan = document.getElementById(`totalValuePreview_${req.id}_${idx}`);
-                    if(input && totalSpan) {
-                        input.addEventListener('input', function() {
-                            const newQty = parseFloat(this.value) || 0;
-                            const newTotal = newQty * price;
-                            totalSpan.innerText = newTotal.toFixed(2);
-                            const acceptBtn = document.getElementById(`acceptBtn_${req.id}`);
-                            const approveAllBtn = document.getElementById(`approveAllBtn_${req.id}`);
-                            const rejectAllBtn = document.getElementById(`rejectAllBtn_${req.id}`);
-                            if(acceptBtn) acceptBtn.disabled = false;
-                            if(approveAllBtn) approveAllBtn.disabled = true;
-                            if(rejectAllBtn) rejectAllBtn.disabled = true;
-                        });
-                    }
-                }, 100);
+                itemsHtml += `<tr>
+                    <td>${item.code}</td>
+                    <td><div class="item-name">${escapeHtml(item.name)}</div><div class="item-max">Max: ${item.maxLimit}</div></td>
+                    <td><span class="requested-qty">${item.originalQty}</span></td>
+                    <td>${item.unit}</td>
+                    <td><span class="item-price">${price.toFixed(2)}</span></td>
+                    <td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${item.originalQty}" min="0" step="0.5"></td>
+                    <td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600; color:#1e3c72;">${(item.originalQty * price).toFixed(2)}</span></td>
+                    <td class="action-buttons"><button class="btn-approve" onclick="approveItem('${req.id}', ${idx})">✅ Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">❌ Reject</button></div></td>
+                    <td><span class="status-pending-cell">Pending</span><div class="admin-info-text">Waiting for approval</div></td>
+                </tr>`;
             }
         });
-        itemsHtml += `</tbody></table></div>`;
+        itemsHtml += `</tbody>}</div>`;
         
         let actions = "";
         if(!isCompleted) {
@@ -1222,6 +1413,7 @@ function renderUI() {
                 <button class="btn-approve-all" id="approveAllBtn_${req.id}" onclick="approveAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>✅ Approve All</button>
                 <button class="btn-reject-all" id="rejectAllBtn_${req.id}" onclick="rejectAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>❌ Reject All</button>
                 <button class="btn-accept" id="acceptBtn_${req.id}" onclick="acceptRequest('${req.id}')" ${!hasIndividualAction ? 'disabled' : ''}>🟣 Accept (Complete)</button>
+                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}')">➕ Add Missing Item</button>
             </div>`;
         } else {
             actions = `<div class="request-actions"><button class="btn-accept" style="background:#6c757d; cursor:default;" disabled>✅ Request Completed - Locked</button></div>`;
@@ -1245,6 +1437,7 @@ function renderUI() {
             <div class="request-info">
                 <div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div>
                 <div class="info-item"><div class="info-label">📅 SUBMITTED</div><div class="info-value">${req.submittedAt}</div></div>
+                <button class="btn-add-missing" onclick="showAddItemModal('${req.id}', '${req.section}')">➕ Add Missing Item</button>
             </div>
             ${itemsHtml}
             ${actions}
