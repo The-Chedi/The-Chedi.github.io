@@ -6,7 +6,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-<title>Admin Dashboard - Full Unrestricted Control</title>
+<title>Admin Dashboard - Full Quantity Control</title>
 
 <style>
 * {
@@ -271,7 +271,7 @@ body {
 .admin-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1200px;
+    min-width: 1050px;
 }
 
 .admin-table th {
@@ -303,12 +303,6 @@ body {
     margin-top: 3px;
 }
 
-.item-max {
-    font-size: 0.6rem;
-    color: #e67e22;
-    margin-top: 2px;
-}
-
 .item-price {
     font-size: 0.7rem;
     color: #e67e22;
@@ -325,56 +319,18 @@ body {
 }
 
 .approval-input {
-    width: 85px;
+    width: 100px;
     padding: 6px 8px;
     border: 1px solid #ddd;
     border-radius: 8px;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
 }
 
 .approval-input:focus {
     outline: none;
     border-color: #3498db;
-}
-
-.price-edit {
-    width: 95px;
-    padding: 6px 8px;
-    border: 1px solid #3498db;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: #fef9e6;
-}
-
-.max-edit {
-    width: 80px;
-    padding: 5px 6px;
-    border: 1px solid #e67e22;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    background: #fff3e0;
-}
-
-.update-item-btn {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 16px;
-    font-size: 0.65rem;
-    cursor: pointer;
-    font-weight: 600;
-    margin-left: 4px;
-}
-
-.update-item-btn:hover {
-    background: #2980b9;
 }
 
 .action-buttons {
@@ -467,6 +423,7 @@ body {
     border-radius: 30px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
 .btn-reject-all {
@@ -478,6 +435,7 @@ body {
     border-radius: 30px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
 .btn-accept {
@@ -489,9 +447,16 @@ body {
     border-radius: 30px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
-.btn-approve-all:disabled, .btn-reject-all:disabled, .btn-accept:disabled {
+.btn-approve-all:disabled, .btn-reject-all:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-accept:disabled {
     background: #95a5a6;
     cursor: not-allowed;
     opacity: 0.6;
@@ -613,6 +578,10 @@ body {
     margin-top: 10px;
 }
 
+.close-modal:hover {
+    background: #7f8c8d;
+}
+
 .confirm-modal {
     display: flex;
     position: fixed;
@@ -636,10 +605,39 @@ body {
     width: 90%;
 }
 
+.confirm-modal-content h3 {
+    color: #e74c3c;
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+}
+
+.confirm-modal-content .warning-text {
+    color: #e74c3c;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.confirm-modal-content input {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+    text-align: center;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.confirm-modal-content input:focus {
+    outline: none;
+    border-color: #e74c3c;
+}
+
 .confirm-buttons {
     display: flex;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .confirm-buttons button {
@@ -647,8 +645,9 @@ body {
     padding: 12px;
     border-radius: 40px;
     font-weight: 600;
-    border: none;
     cursor: pointer;
+    border: none;
+    font-size: 14px;
 }
 
 .btn-confirm-delete {
@@ -656,31 +655,46 @@ body {
     color: white;
 }
 
+.btn-confirm-delete:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+}
+
 .btn-cancel-delete {
     background: #95a5a6;
     color: white;
 }
 
+.free-adjust-badge {
+    background: #3498db;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.6rem;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
 @media (max-width: 768px) {
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .admin-table th, .admin-table td { font-size: 11px; padding: 6px; }
-    .approval-input, .price-edit, .max-edit { width: 65px; font-size: 10px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .stat-card { padding: 12px; }
+    .stat-number { font-size: 1.5rem; }
+    .kitchen-filters { overflow-x: auto; flex-wrap: nowrap; }
+    .kitchen-filter-btn { white-space: nowrap; font-size: 11px; }
+    .tabs { overflow-x: auto; flex-wrap: nowrap; }
+    .tab-btn { white-space: nowrap; font-size: 12px; padding: 6px 14px; }
+    .request-info { flex-direction: column; gap: 8px; }
+    .admin-table th, .admin-table td { padding: 8px 6px; font-size: 11px; }
+    .approval-input { width: 70px; padding: 5px; font-size: 11px; }
+    .btn-approve { padding: 4px 10px; font-size: 0.65rem; }
+    .request-actions { flex-direction: column; }
+    .request-total-badge { flex-direction: column; gap: 5px; text-align: center; }
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
-}
-
-.unrestricted-badge {
-    background: #ffd700;
-    color: #1e3c72;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: bold;
-    margin-left: 8px;
 }
 </style>
 </head>
@@ -691,7 +705,6 @@ body {
         <h2>🔐 Admin Login</h2>
         <div class="user-selector">
             <button class="user-btn" onclick="selectUser('Marco')">👨‍💼 Marco<br><span class="user-title">Administrator</span></button>
-            <button class="user-btn" onclick="selectUser('Nader')">👨‍💻 Nader<br><span class="user-title">Administrator (Full Control)</span></button>
             <button class="user-btn" onclick="selectUser('Nady')">👩‍💼 Nady<br><span class="user-title">Administrator</span></button>
             <button class="user-btn" onclick="selectUser('Ahmed')">👨‍💻 Ahmed<br><span class="user-title">Administrator</span></button>
         </div>
@@ -705,17 +718,26 @@ body {
 <div id="mainContent" style="display:none;">
     <div class="header">
         <div class="header-content">
-            <div class="logo"><span class="logo-icon">👑</span><span>Admin <span>Dashboard</span><span class="unrestricted-badge">⚡ FULL CONTROL</span></span></div>
-            <div><span id="adminNameDisplay" style="font-weight:600;"></span> <span style="font-size:10px;">(Unrestricted Editing)</span>
-            <button class="btn-header" onclick="logout()">🚪 Logout</button></div>
+            <div class="logo">
+                <span class="logo-icon">👑</span>
+                <span>Admin <span>Dashboard</span></span>
+                <span class="free-adjust-badge">✏️ FULL QUANTITY CONTROL</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span id="adminNameDisplay" style="font-weight: 600;"></span>
+                <span style="font-size: 10px; opacity: 0.8;">Administrator</span>
+                <button class="btn-header" onclick="logout()">🚪 Logout</button>
+            </div>
             <div class="header-buttons">
                 <button class="btn-header btn-analytics" onclick="openAnalytics()">📊 Analytics</button>
                 <button class="btn-header" onclick="exportExcel()">📎 Export</button>
                 <button class="btn-header" onclick="window.print()">🖨️ Print</button>
-                <button class="btn-header btn-danger" onclick="showResetConfirmModal()">🗑️ Reset Completed</button>
+                <button class="btn-header" onclick="openRevenue()">💰 Revenue</button>
+                <button class="btn-header btn-danger" onclick="showResetConfirmModal()">🗑️ Reset</button>
             </div>
         </div>
     </div>
+
     <div class="container">
         <div class="stats-grid">
             <div class="stat-card" onclick="setFilter('pending')"><div class="stat-number" id="pendingCount">0</div><div class="stat-label">⏳ Pending</div></div>
@@ -724,6 +746,7 @@ body {
             <div class="stat-card" onclick="setFilter('accepted')"><div class="stat-number" id="acceptedCount">0</div><div class="stat-label">🟣 Accepted</div></div>
             <div class="stat-card" onclick="setFilter('all')"><div class="stat-number" id="totalCount">0</div><div class="stat-label">📦 Total</div></div>
         </div>
+
         <div class="kitchen-filters" id="kitchenFilters"></div>
         <div class="tabs" id="statusTabs"></div>
         <div id="requestsContainer"></div>
@@ -731,13 +754,7 @@ body {
 </div>
 
 <script>
-// ADMIN PASSWORDS: Marco uses "Nader" as requested, Nader is a new admin with password "Nader123"
-const ADMIN_PASSWORDS = { 
-    "Marco": "Nader",      // Changed as requested
-    "Nader": "Nader123",   // New admin user
-    "Nady": "Nn639123", 
-    "Ahmed": "j1cadm1n" 
-};
+const ADMIN_PASSWORDS = { "Marco": "M1r50123", "Nady": "Nn639123", "Ahmed": "j1cadm1n" };
 const KITCHENS = ["Hot Kitchen", "Cold Kitchen", "Pastry / Bakery", "Butchery", "Beach House", "Nihon Kitchen", "Staff Kitchen"];
 
 let currentAdmin = "";
@@ -748,6 +765,7 @@ let selectedUser = "";
 
 function goBackToIndex() { window.location.href = "index.html"; }
 function openAnalytics() { window.open("analytics.html", "_blank"); }
+function openRevenue() { window.open("revenue.html", "_blank"); }
 
 function selectUser(user) {
     selectedUser = user;
@@ -761,12 +779,11 @@ function checkLogin() {
     const pass = document.getElementById("passwordInput").value;
     if(selectedUser && ADMIN_PASSWORDS[selectedUser] === pass) {
         currentAdmin = selectedUser;
-        document.getElementById("adminNameDisplay").innerText = currentAdmin + " (Unrestricted)";
+        document.getElementById("adminNameDisplay").innerText = currentAdmin;
         document.getElementById("passwordModal").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
         localStorage.setItem("admin", currentAdmin);
         loadRequests();
-        showToast(`✅ Welcome ${currentAdmin}! You have FULL unrestricted control over all item values.`);
     } else {
         document.getElementById("loginError").innerHTML = "❌ Wrong password!";
     }
@@ -779,22 +796,26 @@ async function loadRequests() {
         snapshot.forEach(doc => allRequests.push({ id: doc.id, ...doc.data() }));
         renderUI();
         updateStats();
-    } catch(e) { showToast("Error loading: " + e.message); }
+    } catch(e) { showToast("Error loading"); }
 }
 
 function getRequestStatus(items) {
     if(!items || items.length === 0) return "pending";
     let allProcessed = true;
-    let approved = 0, rejected = 0;
+    let approved = 0;
+    let rejected = 0;
+    
     items.forEach(item => {
         if(item.status === "approved") approved++;
         else if(item.status === "rejected") rejected++;
         else allProcessed = false;
     });
+    
     if(items.length > 0 && items[0].completedVia === "accept") return "accepted";
     if(allProcessed) {
         if(approved === items.length) return "approved";
         if(rejected === items.length) return "rejected";
+        return "accepted";
     }
     return "pending";
 }
@@ -805,62 +826,33 @@ async function updateRequest(id, items) {
         showToast(`✅ Updated by ${currentAdmin}`);
         await loadRequests();
         return true;
-    } catch(e) { showToast("Update error: " + e.message); return false; }
+    } catch(e) { showToast("Update error"); return false; }
 }
 
-// ========== ADMIN CAN CHANGE ANY VALUE WITHOUT LIMITATIONS ==========
-async function updateItemDetails(reqId, itemIdx, field, newValue) {
-    const req = allRequests.find(r => r.id === reqId);
-    if(!req) return;
-    const item = req.items[itemIdx];
-    if(field === 'price') {
-        let price = parseFloat(newValue);
-        if(isNaN(price)) { showToast("Invalid price - using number"); return; }
-        item.price = price;
-        item.priceUpdatedBy = currentAdmin;
-        item.priceUpdatedAt = new Date().toLocaleString();
-        showToast(`💰 Price changed to ${price} EGP by ${currentAdmin} (UNRESTRICTED)`);
-    } else if(field === 'maxLimit') {
-        let limit = parseFloat(newValue);
-        if(isNaN(limit)) { showToast("Invalid max limit"); return; }
-        item.maxLimit = limit;
-        item.maxUpdatedBy = currentAdmin;
-        item.maxUpdatedAt = new Date().toLocaleString();
-        showToast(`📊 Max limit changed to ${limit} by ${currentAdmin} (UNRESTRICTED)`);
-    } else if(field === 'originalQty') {
-        let qty = parseFloat(newValue);
-        if(isNaN(qty) || qty < 0) { showToast("Invalid quantity"); return; }
-        item.originalQty = qty;
-        item.qtyUpdatedBy = currentAdmin;
-        item.qtyUpdatedAt = new Date().toLocaleString();
-        showToast(`📦 Requested quantity changed to ${qty} ${item.unit} by ${currentAdmin}`);
-        // Also reset status if pending
-        if(item.status !== "approved" && item.status !== "rejected") {
-            item.status = "pending";
-        }
-    }
-    await updateRequest(reqId, req.items);
-}
-
-async function approveItem(reqId, idx) {
+// NEW: Approve with FULL quantity control (no max limit, can exceed original)
+async function approveItemFlex(reqId, idx) {
     const input = document.getElementById(`qty_${reqId}_${idx}`);
     let qty = parseFloat(input?.value || 0);
-    if(isNaN(qty) || qty < 0) { showToast("Enter valid quantity"); return; }
+    if(isNaN(qty) || qty < 0) { showToast("Enter a valid quantity (0 or more)"); return; }
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         const item = req.items[idx];
-        // NO LIMIT CHECK - admin can approve ANY quantity (full unrestricted)
+        // NO MAX LIMIT CHECK - admin can approve any quantity
+        // Also can exceed original requested quantity
         item.status = "approved";
         item.approvedQty = qty;
         item.approvedBy = currentAdmin;
         item.approvedAt = new Date().toLocaleString();
-        showToast(`✅ Approved ${qty} ${item.unit} of ${item.name} (unrestricted)`);
+        // Remove any previous rejection data if exists
+        delete item.rejectionReason;
+        delete item.rejectedBy;
+        delete item.rejectedAt;
         await updateRequest(reqId, req.items);
     }
 }
 
 async function rejectItem(reqId, idx) {
-    const reason = prompt(`Rejection reason (${currentAdmin}):`, "Out of stock");
+    const reason = prompt(`Rejection reason (${currentAdmin}):`, "Out of stock or unavailable");
     if(reason) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
@@ -869,29 +861,36 @@ async function rejectItem(reqId, idx) {
             req.items[idx].rejectedBy = currentAdmin;
             req.items[idx].rejectedAt = new Date().toLocaleString();
             req.items[idx].approvedQty = 0;
+            delete req.items[idx].approvedBy;
+            delete req.items[idx].approvedAt;
             await updateRequest(reqId, req.items);
         }
     }
 }
 
-async function approveAll(reqId) {
-    if(!confirm(`Approve ALL items with FULL QUANTITY as ${currentAdmin}? No limits applied.`)) return;
+async function approveAllFlex(reqId) {
+    if(!confirm(`Approve ALL items with current quantities as ${currentAdmin}? (Quantities can be any number, no limits)`)) return;
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
-        req.items.forEach(item => {
-            // Admin can approve full requested quantity without max limit restriction
+        for(let i=0; i<req.items.length; i++) {
+            const input = document.getElementById(`qty_${reqId}_${i}`);
+            let qty = parseFloat(input?.value || 0);
+            if(isNaN(qty)) qty = 0;
+            const item = req.items[i];
             item.status = "approved";
-            item.approvedQty = item.originalQty;
+            item.approvedQty = qty;
             item.approvedBy = currentAdmin;
             item.approvedAt = new Date().toLocaleString();
-            delete item.completedVia;
-        });
+            delete item.rejectionReason;
+            delete item.rejectedBy;
+            delete item.rejectedAt;
+        }
         await updateRequest(reqId, req.items);
     }
 }
 
 async function rejectAll(reqId) {
-    const reason = prompt(`Rejection reason for ALL items (${currentAdmin}):`, "Not available");
+    const reason = prompt(`Rejection reason for ALL (${currentAdmin}):`, "Not available");
     if(reason) {
         const req = allRequests.find(r => r.id === reqId);
         if(req) {
@@ -901,7 +900,8 @@ async function rejectAll(reqId) {
                 item.rejectedBy = currentAdmin;
                 item.rejectedAt = new Date().toLocaleString();
                 item.approvedQty = 0;
-                delete item.completedVia;
+                delete item.approvedBy;
+                delete item.approvedAt;
             });
             await updateRequest(reqId, req.items);
         }
@@ -909,13 +909,13 @@ async function rejectAll(reqId) {
 }
 
 async function acceptRequest(reqId) {
-    if(!confirm(`Final accept? Request will be locked.`)) return;
+    if(!confirm(`Accept this request? It will be locked and moved to Accepted section.`)) return;
     const req = allRequests.find(r => r.id === reqId);
     if(req) {
         req.items.forEach(item => {
             if(item.status !== "approved" && item.status !== "rejected") {
                 item.status = "rejected";
-                item.rejectionReason = "Auto-rejected on final accept";
+                item.rejectionReason = "Auto-rejected - request accepted";
                 item.rejectedBy = currentAdmin;
                 item.rejectedAt = new Date().toLocaleString();
                 item.approvedQty = 0;
@@ -927,36 +927,42 @@ async function acceptRequest(reqId) {
 }
 
 function showResetConfirmModal() {
-    const toDelete = allRequests.filter(req => getRequestStatus(req.items) !== "pending");
+    const toDelete = allRequests.filter(req => {
+        const status = getRequestStatus(req.items);
+        return status !== "pending";
+    });
     if(toDelete.length === 0) { showToast("ℹ️ No completed requests to delete"); return; }
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
-    modal.innerHTML = `<div class="confirm-modal-content">
-        <h3>⚠️ PERMANENT DELETION</h3>
-        <p>Delete <strong>${toDelete.length}</strong> completed request(s).</p>
-        <p class="warning-text" style="color:#e74c3c;">This action cannot be undone!</p>
-        <p>Type <strong>DELETE</strong> to confirm:</p>
-        <input type="text" id="confirmDeleteInput" placeholder="DELETE" autocomplete="off">
-        <div class="confirm-buttons">
-            <button class="btn-cancel-delete">Cancel</button>
-            <button class="btn-confirm-delete" id="confirmDeleteBtn" disabled>Delete Permanently</button>
+    modal.innerHTML = `
+        <div class="confirm-modal-content">
+            <h3>⚠️ PERMANENT DELETION ⚠️</h3>
+            <p>You are about to delete <strong>${toDelete.length}</strong> completed request(s).</p>
+            <p class="warning-text">This action cannot be undone!</p>
+            <p>Type <strong style="color:#e74c3c;">DELETE</strong> below to confirm:</p>
+            <input type="text" id="confirmDeleteInput" placeholder="Type DELETE" autocomplete="off">
+            <div class="confirm-buttons">
+                <button class="btn-cancel-delete" onclick="this.closest('.confirm-modal').remove()">Cancel</button>
+                <button class="btn-confirm-delete" id="confirmDeleteBtn" disabled>Delete Permanently</button>
+            </div>
         </div>
-    </div>`;
+    `;
     document.body.appendChild(modal);
     const input = modal.querySelector('#confirmDeleteInput');
     const confirmBtn = modal.querySelector('#confirmDeleteBtn');
     input.focus();
     input.addEventListener('input', (e) => { confirmBtn.disabled = e.target.value !== 'DELETE'; });
-    modal.querySelector('.btn-cancel-delete').onclick = () => modal.remove();
     confirmBtn.onclick = async () => {
         if(input.value === 'DELETE') {
             modal.remove();
+            let deletedCount = 0;
             for(const req of toDelete) {
-                try { await db.collection("kitchen_requests").doc(req.id).delete(); } catch(e) { console.error(e); }
+                try { await db.collection("kitchen_requests").doc(req.id).delete(); deletedCount++; }
+                catch(e) { console.error(e); }
             }
             await loadRequests();
-            showToast(`✅ Deleted ${toDelete.length} completed requests.`);
-        } else { showToast("❌ Cancelled"); modal.remove(); }
+            showToast(`✅ Deleted ${deletedCount} completed requests.`);
+        } else { showToast("Cancelled"); modal.remove(); }
     };
 }
 
@@ -976,10 +982,10 @@ function exportExcel() {
             csv += `"${req.requestId}","${req.section}","${req.chefName}","${req.submittedAt}","${item.name}","${item.code}",${item.originalQty},"${item.unit}",${price},${approvedQty},"${status}","${actionBy}",${totalValue}\n`;
         });
     });
-    const blob = new Blob(["\uFEFF" + csv], {type: "text/csv"});
+    const blob = new Blob(["\uFEFF" + csv], {type: "text/csv;charset=utf-8"});
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `orders_fullcontrol_${Date.now()}.csv`;
+    link.download = `orders_${Date.now()}.csv`;
     link.click();
 }
 
@@ -1002,7 +1008,140 @@ function updateStats() {
 function setFilter(status) { currentStatus = status; renderUI(); }
 function filterKitchen(kitchen) { currentKitchen = kitchen; renderUI(); }
 
-// renderUI function continues in next part due to length...
+function renderUI() {
+    const kitchenDiv = document.getElementById("kitchenFilters");
+    kitchenDiv.innerHTML = `<button class="kitchen-filter-btn ${currentKitchen === 'all' ? 'active' : ''}" onclick="filterKitchen('all')">📋 All</button>`;
+    KITCHENS.forEach(k => {
+        let icon = k === 'Hot Kitchen' ? '🔥' : k === 'Cold Kitchen' ? '❄️' : k === 'Pastry / Bakery' ? '🍰' : k === 'Butchery' ? '🥩' : k === 'Beach House' ? '🏖️' : k === 'Nihon Kitchen' ? '🍜' : '👥';
+        let name = k.replace(' Kitchen', '').replace(' / Bakery', '');
+        kitchenDiv.innerHTML += `<button class="kitchen-filter-btn ${currentKitchen === k ? 'active' : ''}" onclick="filterKitchen('${k}')">${icon} ${name}</button>`;
+    });
+    
+    const tabsDiv = document.getElementById("statusTabs");
+    const statuses = ["pending", "approved", "rejected", "accepted", "all"];
+    const statusNames = ["⏳ Pending", "✅ Approved", "❌ Rejected", "🟣 Accepted", "📋 All"];
+    tabsDiv.innerHTML = "";
+    statuses.forEach((s, i) => {
+        tabsDiv.innerHTML += `<button class="tab-btn ${currentStatus === s ? 'active' : ''}" onclick="setFilter('${s}')">${statusNames[i]}</button>`;
+    });
+    
+    let filtered = [...allRequests];
+    if(currentKitchen !== "all") filtered = filtered.filter(r => r.section === currentKitchen);
+    if(currentStatus !== "all") filtered = filtered.filter(r => getRequestStatus(r.items) === currentStatus);
+    
+    const container = document.getElementById("requestsContainer");
+    if(!filtered.length) { container.innerHTML = `<div class="empty-state">📭 No requests found</div>`; return; }
+    
+    container.innerHTML = "";
+    filtered.forEach(req => {
+        const requestStatus = getRequestStatus(req.items);
+        const kitchenClass = { "Hot Kitchen": "kitchen-hot", "Cold Kitchen": "kitchen-cold", "Pastry / Bakery": "kitchen-pastry", "Butchery": "kitchen-butchery", "Beach House": "kitchen-beach", "Nihon Kitchen": "kitchen-nihon", "Staff Kitchen": "kitchen-staff" }[req.section] || "kitchen-staff";
+        
+        let requestedTotalValue = 0, approvedTotalValue = 0;
+        req.items.forEach(item => {
+            const price = item.price || 0;
+            requestedTotalValue += item.originalQty * price;
+            if(item.status === "approved") approvedTotalValue += (item.approvedQty || 0) * price;
+        });
+        
+        let hasIndividualAction = false;
+        let isCompleted = false;
+        if(requestStatus === "pending") {
+            for(const item of req.items) {
+                if(item.status === "approved" || item.status === "rejected") {
+                    hasIndividualAction = true;
+                    break;
+                }
+            }
+        } else { isCompleted = true; }
+        
+        let itemsHtml = `<div class="table-wrapper"><table class="admin-table"><thead><tr><th>Code</th><th>Item</th><th>Requested Qty</th><th>Unit</th><th>Price/Unit (EGP)</th><th>Admin Qty (No Limit)</th><th>Total Value (EGP)</th><th>Action</th><th>Status</th></tr></thead><tbody>`;
+        
+        req.items.forEach((item, idx) => {
+            const price = item.price || 0;
+            const approvedQty = item.status === "approved" ? (item.approvedQty || 0) : 0;
+            const totalValue = approvedQty * price;
+            
+            if(item.status === "approved") {
+                itemsHtml += `<tr style="background:#e8f5e9;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><strong>${approvedQty.toFixed(1)}</strong></td><td><strong style="color:#27ae60;">${totalValue.toFixed(2)}</strong></td><td><span class="btn-approve" style="background:#27ae60;opacity:0.7;">✅ Approved</span></td><td><span class="status-approved-cell">Approved</span><div class="admin-info-text">👤 ${escapeHtml(item.approvedBy || '?')}<br>📅 ${item.approvedAt || ''}</div></td></tr>`;
+            } else if(item.status === "rejected") {
+                itemsHtml += `<tr style="background:#fee2e2;"><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><strong>0</strong></td><td><strong style="color:#e74c3c;">0.00</strong></td><td><span class="btn-reject" style="background:#e74c3c;opacity:0.7;">❌ Rejected</span></td><td><span class="status-rejected-cell">Rejected</span><div class="admin-info-text">👤 ${escapeHtml(item.rejectedBy || '?')}<br>📅 ${item.rejectedAt || ''}<br>📝 ${escapeHtml(item.rejectionReason || '')}</div></td></tr>`;
+            } else {
+                const currentVal = (item.originalQty || 0).toFixed(1);
+                itemsHtml += `<tr><td>${item.code}</td><td><div class="item-name">${escapeHtml(item.name)}</div></td><td><span class="requested-qty">${item.originalQty}</span></td><td>${item.unit}</td><td><span class="item-price">${price.toFixed(2)}</span></td><td><input type="number" id="qty_${req.id}_${idx}" class="approval-input" value="${currentVal}" min="0" step="0.5" style="background:#fef9e6;"></td><td><span id="totalValuePreview_${req.id}_${idx}" style="font-weight:600; color:#1e3c72;">${(item.originalQty * price).toFixed(2)}</span></td><td class="action-buttons"><button class="btn-approve" onclick="approveItemFlex('${req.id}', ${idx})">✅ Approve</button><button class="btn-reject" onclick="rejectItem('${req.id}', ${idx})">❌ Reject</button></td><td><span class="status-pending-cell">Pending</span><div class="admin-info-text">Waiting (Qty: any value)</div></td></tr>`;
+                
+                setTimeout(() => {
+                    const input = document.getElementById(`qty_${req.id}_${idx}`);
+                    const totalSpan = document.getElementById(`totalValuePreview_${req.id}_${idx}`);
+                    if(input && totalSpan) {
+                        const updateTotal = () => {
+                            const newQty = parseFloat(input.value) || 0;
+                            totalSpan.innerText = (newQty * price).toFixed(2);
+                        };
+                        input.addEventListener('input', updateTotal);
+                        updateTotal();
+                    }
+                }, 50);
+            }
+        });
+        itemsHtml += `</tbody></table></div>`;
+        
+        let actions = "";
+        if(!isCompleted) {
+            actions = `<div class="request-actions">
+                <button class="btn-approve-all" id="approveAllBtn_${req.id}" onclick="approveAllFlex('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>✅ Approve All (Flex Qty)</button>
+                <button class="btn-reject-all" id="rejectAllBtn_${req.id}" onclick="rejectAll('${req.id}')" ${hasIndividualAction ? 'disabled' : ''}>❌ Reject All</button>
+                <button class="btn-accept" id="acceptBtn_${req.id}" onclick="acceptRequest('${req.id}')" ${!hasIndividualAction ? 'disabled' : ''}>🟣 Accept (Complete)</button>
+            </div>`;
+        } else {
+            actions = `<div class="request-actions"><button class="btn-accept" style="background:#6c757d; cursor:default;" disabled>✅ Request Completed - Locked</button></div>`;
+        }
+        
+        let statusText = "", statusClass = "";
+        if(requestStatus === "pending") { statusText = "Pending"; statusClass = "status-pending"; }
+        else if(requestStatus === "approved") { statusText = "Fully Approved"; statusClass = "status-approved"; }
+        else if(requestStatus === "rejected") { statusText = "Rejected"; statusClass = "status-rejected"; }
+        else { statusText = "Accepted"; statusClass = "status-accepted"; }
+        
+        container.innerHTML += `<div class="request-card">
+            <div class="request-header">
+                <div><span class="request-id">📄 ${req.requestId}</span><span class="kitchen-badge ${kitchenClass}" style="margin-left:10px;">${req.section}</span></div>
+                <div class="request-total-badge">
+                    <span>💰 Requested: ${requestedTotalValue.toFixed(2)} EGP</span>
+                    <span>✅ Approved: ${approvedTotalValue.toFixed(2)} EGP</span>
+                </div>
+                <span class="status-badge ${statusClass}">${statusText}</span>
+            </div>
+            <div class="request-info">
+                <div class="info-item"><div class="info-label">👨‍🍳 CHEF</div><div class="info-value">${escapeHtml(req.chefName)}</div></div>
+                <div class="info-item"><div class="info-label">📅 SUBMITTED</div><div class="info-value">${req.submittedAt}</div></div>
+            </div>
+            ${itemsHtml}
+            ${actions}
+        </div>`;
+    });
+    updateStats();
+}
+
+function logout() {
+    if(confirm("Are you sure you want to logout?")) {
+        localStorage.removeItem("admin");
+        sessionStorage.clear();
+        window.location.href = "index.html";
+    }
+}
+
+function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
+function showToast(msg) { const t = document.createElement("div"); t.className = "toast"; t.innerText = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
+
+const saved = localStorage.getItem("admin");
+if(saved && ADMIN_PASSWORDS[saved]) {
+    currentAdmin = saved;
+    document.getElementById("adminNameDisplay").innerText = currentAdmin;
+    document.getElementById("passwordModal").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    loadRequests();
+}
 </script>
 </body>
 </html>
